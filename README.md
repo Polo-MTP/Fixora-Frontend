@@ -57,3 +57,19 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Commits
+
+Los commits siguen Conventional Commits con el ID de la tarea de Plane:
+
+```txt
+<tipo>(<ámbito>): <descripción> (FRONTENDAN-XX)
+```
+
+El hook `.githooks/commit-msg` rechaza los mensajes que no cumplen el formato. Se activa solo con `pnpm install`; para activarlo a mano:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Cada pull request pasa además por el workflow `Conventional Commits`, que revisa el nombre de la rama, el título del PR y los commits.
