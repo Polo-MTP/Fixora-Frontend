@@ -1,0 +1,23 @@
+:host {
+  display: block;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+header,
+nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+header {
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+header > a {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+main {
+  max-width: 38rem;
+}
