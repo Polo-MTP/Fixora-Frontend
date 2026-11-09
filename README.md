@@ -1,5 +1,22 @@
 # FrontendFixora
 
+## Rutas y sesión
+
+Requiere Node.js 22.22.3 o superior (o 24.15.0 o superior) y pnpm 10.27.0. Con la API local
+en `http://localhost:3001`, ejecuta `pnpm install` y `pnpm start`. El servidor de
+Angular reenvía `/api` a la API mediante `proxy.conf.json`. En un despliegue, el
+servidor web debe reenviar `/api` a la API.
+
+`/login` inicia sesión. `/inicio` requiere una sesión válida. Las rutas `/cliente`,
+`/proveedor`, `/gerente`, `/empleado`, `/administrador` y `/soporte` requieren el
+rol correspondiente. Los guards consultan `GET /api/me` para comprobar el rol
+actual. El interceptor añade el Bearer a las llamadas `/api` y, si recibe 401,
+renueva los tokens una vez mediante `POST /api/auth/refresh`. Un 403 no se renueva.
+Los tokens se conservan en `sessionStorage` hasta cerrar la pestaña o salir.
+
+Las claves de correo, JWT y base de datos son exclusivas del servidor y no deben
+añadirse al proyecto Angular.
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.6.
 
 ## Development server
