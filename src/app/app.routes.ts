@@ -31,6 +31,14 @@ export const routes: Routes = [
       message: 'No se pudo comprobar tu sesión. Intenta de nuevo.',
     },
   },
+
+  // Registro para el proveedor
+  {
+    path: 'registro-proveedor',
+    loadComponent: () =>
+      import('./pages/registro-proveedor').then((m) => m.ProviderRegistration),
+  },
+
   {
     path: '**',
     loadComponent: () => import('./pages/message').then((m) => m.Message),
