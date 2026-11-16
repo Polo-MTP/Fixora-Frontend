@@ -1,11 +1,19 @@
 <header>
-  <a routerLink="/inicio">Fixora</a>
+  <a class="brand" routerLink="/" aria-label="Fixora, inicio">Fixora</a>
+
   @if (session.current()) {
-    <nav aria-label="Navegación principal">
-      <a routerLink="/inicio">Inicio</a>
-      <a [routerLink]="'/' + session.current()!.role">Mi área</a>
-      <button type="button" (click)="logout()">Cerrar sesión</button>
-    </nav>
+  <nav aria-label="Navegación principal">
+    <a routerLink="/inicio">Inicio</a>
+    <a [routerLink]="'/' + session.current()!.role">Mi área</a>
+    <button type="button" (click)="logout()">Cerrar sesión</button>
+  </nav>
+  } @else {
+  <nav aria-label="Navegación principal">
+    <a routerLink="/" fragment="servicios">Servicios</a>
+    <a routerLink="/" fragment="como-funciona">Cómo funciona</a>
+    <a routerLink="/login">Iniciar sesión</a>
+    <a class="header-cta" routerLink="/registro-proveedor">Quiero ser proveedor</a>
+  </nav>
   }
 </header>
 

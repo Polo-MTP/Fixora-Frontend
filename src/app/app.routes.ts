@@ -3,8 +3,16 @@ import { Routes } from '@angular/router';
 import { authGuard, roleGuard } from './auth/session.guards';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'inicio' },
-  { path: 'login', loadComponent: () => import('./pages/login').then((m) => m.Login) },
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () => import('./pages/landing').then((m) => m.Landing),
+  },
+
+  {
+    path: 'login',
+    loadComponent: () => import('./pages/login').then((m) => m.Login),
+  },
   {
     path: 'inicio',
     canActivate: [authGuard],
@@ -31,6 +39,14 @@ export const routes: Routes = [
       message: 'No se pudo comprobar tu sesión. Intenta de nuevo.',
     },
   },
+
+  // Registro para el proveedor
+  {
+    path: 'registro-proveedor',
+    loadComponent: () =>
+      import('./pages/registro-proveedor').then((m) => m.ProviderRegistration),
+  },
+
   {
     path: '**',
     loadComponent: () => import('./pages/message').then((m) => m.Message),

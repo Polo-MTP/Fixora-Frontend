@@ -90,3 +90,17 @@ git config core.hooksPath .githooks
 ```
 
 Cada pull request pasa además por el workflow `Conventional Commits`, que revisa el nombre de la rama, el título del PR y los commits.
+
+## Landing pública
+
+La ruta `/` muestra la landing pública de Fixora. Incluye la presentación del servicio,
+las categorías principales y una explicación del flujo para solicitar ayuda.
+
+Los botones “Quiero ser proveedor” llevan a `/registro-proveedor`. Esa ruta es el punto
+de entrada al registro de proveedores. `/login` conserva el formulario de inicio de sesión.
+
+Las pruebas unitarias se ejecutan con:
+
+```bash
+pnpm test
+pnpm.cmd exec ng test --watch=false
