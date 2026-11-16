@@ -4,7 +4,7 @@ import { authGuard, roleGuard } from './auth/session.guards';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'inicio' },
-  { path: 'login', loadComponent: () => import('./pages/login').then((m) => m.Login) },
+  { path: 'login', loadComponent: () => import('./pages/landing').then((m) => m.Landing) },
   {
     path: 'inicio',
     canActivate: [authGuard],
