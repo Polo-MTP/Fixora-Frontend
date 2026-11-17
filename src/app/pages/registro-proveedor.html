@@ -19,6 +19,9 @@
         <li [class.registration-steps__item--active]="currentStep === 3">
           <span>3</span> Datos del negocio
         </li>
+        <li [class.registration-steps__item--active]="currentStep === 4">
+          <span>4</span> Documentos requeridos
+        </li>
       </ol>
 
       <p class="registration-aside__help">
@@ -42,7 +45,7 @@
 
       @if (currentStep === 1) {
         <div class="registration-panel registration-panel--intro">
-          <p class="eyebrow">Paso 1 de 3</p>
+          <p class="eyebrow">Paso 1 de 4</p>
           <h2>Todo empieza con tu negocio.</h2>
           <p class="registration-panel__lead">
             Completarás una breve solicitud con los datos del encargado y la información principal
@@ -62,8 +65,8 @@
             </article>
             <article>
               <span class="process-cards__number">03</span>
-              <h3>Completa tu solicitud</h3>
-              <p>Después podrás agregar tus sucursales, servicios y documentos de verificación.</p>
+              <h3>Adjunta tus documentos</h3>
+              <p>Te mostraremos la evidencia requerida según cómo opera tu negocio.</p>
             </article>
           </div>
 
@@ -74,7 +77,7 @@
         </div>
       } @else if (currentStep === 2) {
         <form class="registration-panel" (ngSubmit)="continue()" novalidate>
-          <p class="eyebrow">Paso 2 de 3</p>
+          <p class="eyebrow">Paso 2 de 4</p>
           <h2>¿Quién estará a cargo?</h2>
           <p class="registration-panel__lead">
             Esta persona será el contacto principal y tendrá acceso a la cuenta del proveedor.
@@ -227,154 +230,234 @@
             </button>
           </div>
         </form>
-      } @else {
+      } @else if (currentStep === 3) {
         <form class="registration-panel" (ngSubmit)="continue()" novalidate>
-          @if (completed) {
-            <div class="registration-complete" aria-live="polite">
-              <span class="registration-complete__icon" aria-hidden="true">✓</span>
-              <p class="eyebrow">Avance guardado</p>
-              <h2>Tu información inicial está lista.</h2>
-              <p class="registration-panel__lead">
-                En la siguiente etapa podrás agregar tus sucursales, servicios y documentación para
-                enviar la solicitud a revisión.
-              </p>
+          <p class="eyebrow">Paso 3 de 4</p>
+          <h2>Háblanos de tu negocio.</h2>
+          <p class="registration-panel__lead">
+            Esta información se mostrará durante el proceso de verificación y será el punto de
+            partida para registrar tus locales.
+          </p>
 
-              <dl class="summary-list">
-                <div>
-                  <dt>Encargado</dt>
-                  <dd>{{ manager.name }} {{ manager.lastnameP }}</dd>
-                </div>
-                <div>
-                  <dt>Negocio</dt>
-                  <dd>{{ business.name }}</dd>
-                </div>
-                <div>
-                  <dt>Operación</dt>
-                  <dd>
-                    {{ business.supplierType === 'empresa' ? 'Con sucursales' : 'Independiente' }}
-                  </dd>
-                </div>
-              </dl>
+          <label class="form-field" for="business-name">
+            <span>Nombre del negocio</span>
+            <input
+              id="business-name"
+              name="businessName"
+              type="text"
+              autocomplete="organization"
+              placeholder="Ej. Soluciones García"
+              [(ngModel)]="business.name"
+              (ngModelChange)="saveDraft()"
+              [attr.aria-invalid]="!!errors['businessName']"
+            />
+            @if (errors['businessName']) {
+              <small>{{ errors['businessName'] }}</small>
+            }
+          </label>
 
-              <div class="form-actions">
-                <button class="secondary-button" type="button" (click)="editBusiness()">
-                  Editar datos
-                </button>
-                <a class="primary-button" routerLink="/">Volver al inicio</a>
-              </div>
-            </div>
-          } @else {
-            <p class="eyebrow">Paso 3 de 3</p>
-            <h2>Háblanos de tu negocio.</h2>
-            <p class="registration-panel__lead">
-              Esta información se mostrará durante el proceso de verificación y será el punto de
-              partida para registrar tus locales.
-            </p>
-
-            <label class="form-field" for="business-name">
-              <span>Nombre del negocio</span>
+          <div class="form-grid form-grid--two-columns">
+            <label class="form-field" for="business-phone">
+              <span>Teléfono del negocio</span>
               <input
-                id="business-name"
-                name="businessName"
-                type="text"
-                autocomplete="organization"
-                placeholder="Ej. Soluciones García"
-                [(ngModel)]="business.name"
+                id="business-phone"
+                name="businessPhone"
+                type="tel"
+                inputmode="numeric"
+                autocomplete="tel"
+                placeholder="10 dígitos"
+                [(ngModel)]="business.phone"
                 (ngModelChange)="saveDraft()"
-                [attr.aria-invalid]="!!errors['businessName']"
+                [attr.aria-invalid]="!!errors['businessPhone']"
               />
-              @if (errors['businessName']) {
-                <small>{{ errors['businessName'] }}</small>
+              @if (errors['businessPhone']) {
+                <small>{{ errors['businessPhone'] }}</small>
               }
             </label>
 
-            <div class="form-grid form-grid--two-columns">
-              <label class="form-field" for="business-phone">
-                <span>Teléfono del negocio</span>
-                <input
-                  id="business-phone"
-                  name="businessPhone"
-                  type="tel"
-                  inputmode="numeric"
-                  autocomplete="tel"
-                  placeholder="10 dígitos"
-                  [(ngModel)]="business.phone"
-                  (ngModelChange)="saveDraft()"
-                  [attr.aria-invalid]="!!errors['businessPhone']"
-                />
-                @if (errors['businessPhone']) {
-                  <small>{{ errors['businessPhone'] }}</small>
-                }
-              </label>
+            <label class="form-field" for="business-email">
+              <span>Correo del negocio</span>
+              <input
+                id="business-email"
+                name="businessEmail"
+                type="email"
+                autocomplete="email"
+                placeholder="contacto@negocio.com"
+                [(ngModel)]="business.email"
+                (ngModelChange)="saveDraft()"
+                [attr.aria-invalid]="!!errors['businessEmail']"
+              />
+              @if (errors['businessEmail']) {
+                <small>{{ errors['businessEmail'] }}</small>
+              }
+            </label>
+          </div>
 
-              <label class="form-field" for="business-email">
-                <span>Correo del negocio</span>
+          <fieldset class="provider-type" [attr.aria-invalid]="!!errors['supplierType']">
+            <legend>¿Cómo opera tu negocio?</legend>
+            <p>Podrás agregar el detalle de cada local en el siguiente registro.</p>
+            <div class="provider-type__options">
+              <label
+                [class.provider-type__option--selected]="business.supplierType === 'independiente'"
+              >
                 <input
-                  id="business-email"
-                  name="businessEmail"
-                  type="email"
-                  autocomplete="email"
-                  placeholder="contacto@negocio.com"
-                  [(ngModel)]="business.email"
+                  type="radio"
+                  name="supplierType"
+                  value="independiente"
+                  [(ngModel)]="business.supplierType"
                   (ngModelChange)="saveDraft()"
-                  [attr.aria-invalid]="!!errors['businessEmail']"
                 />
-                @if (errors['businessEmail']) {
-                  <small>{{ errors['businessEmail'] }}</small>
-                }
+                <span>
+                  <strong>Independiente</strong>
+                  <small>Atiendo desde un solo local o de forma móvil.</small>
+                </span>
+              </label>
+              <label [class.provider-type__option--selected]="business.supplierType === 'empresa'">
+                <input
+                  type="radio"
+                  name="supplierType"
+                  value="empresa"
+                  [(ngModel)]="business.supplierType"
+                  (ngModelChange)="saveDraft()"
+                />
+                <span>
+                  <strong>Con sucursales</strong>
+                  <small>Registro uno o más locales de atención.</small>
+                </span>
               </label>
             </div>
+            @if (errors['supplierType']) {
+              <small class="provider-type__error">{{ errors['supplierType'] }}</small>
+            }
+          </fieldset>
 
-            <fieldset class="provider-type" [attr.aria-invalid]="!!errors['supplierType']">
-              <legend>¿Cómo opera tu negocio?</legend>
-              <p>Podrás agregar el detalle de cada local en el siguiente registro.</p>
-              <div class="provider-type__options">
-                <label
-                  [class.provider-type__option--selected]="
-                    business.supplierType === 'independiente'
-                  "
-                >
-                  <input
-                    type="radio"
-                    name="supplierType"
-                    value="independiente"
-                    [(ngModel)]="business.supplierType"
-                    (ngModelChange)="saveDraft()"
-                  />
-                  <span>
-                    <strong>Independiente</strong>
-                    <small>Atiendo desde un solo local o de forma móvil.</small>
-                  </span>
-                </label>
-                <label
-                  [class.provider-type__option--selected]="business.supplierType === 'empresa'"
-                >
-                  <input
-                    type="radio"
-                    name="supplierType"
-                    value="empresa"
-                    [(ngModel)]="business.supplierType"
-                    (ngModelChange)="saveDraft()"
-                  />
-                  <span>
-                    <strong>Con sucursales</strong>
-                    <small>Registro uno o más locales de atención.</small>
-                  </span>
-                </label>
-              </div>
-              @if (errors['supplierType']) {
-                <small class="provider-type__error">{{ errors['supplierType'] }}</small>
-              }
-            </fieldset>
+          <div class="form-actions">
+            <button class="secondary-button" type="button" (click)="back()">Anterior</button>
+            <button class="primary-button" type="submit">
+              Continuar <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </form>
+      } @else {
+        <section
+          class="registration-panel registration-panel--documents"
+          aria-labelledby="documents-title"
+        >
+          <p class="eyebrow">Paso 4 de 4</p>
+          <h2 id="documents-title">Documentos requeridos</h2>
+          <p class="registration-panel__lead">
+            Estos documentos corresponden a un proveedor
+            {{ business.supplierType === 'empresa' ? 'con sucursales' : 'independiente' }}. Adjunta
+            cada evidencia para dejarla lista para el envío de tu solicitud.
+          </p>
 
-            <div class="form-actions">
-              <button class="secondary-button" type="button" (click)="back()">Anterior</button>
-              <button class="primary-button" type="submit">
-                Guardar avance <span aria-hidden="true">✓</span>
+          <p class="documents-notice">
+            Aceptamos PDF, JPG, PNG o WEBP de hasta 15 MB. Los archivos permanecen en este navegador
+            mientras completas el registro.
+          </p>
+
+          @if (documentsLoading) {
+            <p class="documents-feedback" role="status">Cargando documentos requeridos…</p>
+          } @else if (documentsError) {
+            <div class="documents-feedback documents-feedback--error" role="alert">
+              <p>{{ documentsError }}</p>
+              <button class="secondary-button" type="button" (click)="retryDocumentTypes()">
+                Reintentar
               </button>
             </div>
+          } @else {
+            <div class="document-list">
+              @for (document of documents; track document.id) {
+                <article
+                  class="document-card"
+                  [class.document-card--ready]="document.status === 'ready'"
+                >
+                  <div class="document-card__header">
+                    <div>
+                      <h3>{{ document.name }}</h3>
+                      <p>{{ document.description }}</p>
+                    </div>
+                    <span
+                      class="document-status"
+                      [class.document-status--ready]="document.status === 'ready'"
+                      [class.document-status--error]="document.status === 'error'"
+                    >
+                      @if (document.status === 'ready') {
+                        Listo
+                      } @else if (document.status === 'error') {
+                        Revisar archivo
+                      } @else {
+                        Pendiente
+                      }
+                    </span>
+                  </div>
+
+                  @if (document.requires_expiration_date) {
+                    <p class="document-card__requirement">Incluye un documento vigente.</p>
+                  }
+
+                  @if (document.fileName) {
+                    <div class="document-preview">
+                      @if (document.previewUrl && isImage(document)) {
+                        <img
+                          [src]="document.previewUrl"
+                          [alt]="'Vista previa de ' + document.name"
+                        />
+                      } @else {
+                        <span class="document-preview__file" aria-hidden="true">PDF</span>
+                      }
+                      <div>
+                        <strong>{{ document.fileName }}</strong>
+                        <small>{{ document.fileSize }} · Listo para enviar</small>
+                        @if (document.previewUrl) {
+                          <a [href]="document.previewUrl" target="_blank" rel="noopener"
+                            >Ver vista previa</a
+                          >
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <div class="document-card__actions">
+                    <label class="upload-button" [for]="'document-' + document.id">
+                      {{ document.fileName ? 'Cambiar archivo' : 'Cargar evidencia' }}
+                    </label>
+                    <input
+                      #fileInput
+                      class="visually-hidden"
+                      [id]="'document-' + document.id"
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png,image/webp"
+                      (change)="onDocumentSelected(document, $event)"
+                    />
+                    @if (document.fileName) {
+                      <button
+                        class="text-button"
+                        type="button"
+                        (click)="removeDocument(document, fileInput)"
+                      >
+                        Quitar
+                      </button>
+                    }
+                  </div>
+
+                  @if (document.error) {
+                    <p class="document-card__error" role="alert">{{ document.error }}</p>
+                  }
+                </article>
+              } @empty {
+                <p class="documents-feedback">
+                  No hay documentos configurados para este tipo de proveedor.
+                </p>
+              }
+            </div>
           }
-        </form>
+
+          <div class="form-actions">
+            <button class="secondary-button" type="button" (click)="back()">Anterior</button>
+            <a class="primary-button" routerLink="/">Guardar avance</a>
+          </div>
+        </section>
       }
     </main>
   </div>

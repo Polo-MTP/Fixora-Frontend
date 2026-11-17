@@ -1,9 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { take } from 'rxjs';
 
-type RegistrationStep = 1 | 2 | 3;
-type SupplierType = 'independiente' | 'empresa';
+import {
+  ProviderRegistrationApi,
+  type ProviderDocumentType,
+  type SupplierType,
+} from '../registration/provider-registration-api';
+
+type RegistrationStep = 1 | 2 | 3 | 4;
+type DocumentStatus = 'pending' | 'ready' | 'error';
 
 interface ManagerDraft {
   name: string;
@@ -24,14 +31,24 @@ interface BusinessDraft {
 
 interface RegistrationDraft {
   step: RegistrationStep;
-  completed: boolean;
   manager: Omit<ManagerDraft, 'password' | 'passwordConfirmation'>;
   business: BusinessDraft;
+}
+
+interface RegistrationDocument extends ProviderDocumentType {
+  file?: File;
+  fileName?: string;
+  fileSize?: string;
+  previewUrl?: string;
+  status: DocumentStatus;
+  error?: string;
 }
 
 const DRAFT_KEY = 'fixora-provider-registration-draft-v1';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^\d{10}$/;
+const ACCEPTED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 15 * 1024 * 1024;
 
 @Component({
   selector: 'app-provider-registration',
@@ -40,14 +57,18 @@ const PHONE_PATTERN = /^\d{10}$/;
   styleUrl: './registro-proveedor.css',
 })
 export class ProviderRegistration implements OnInit {
+  private readonly registrationApi = inject(ProviderRegistrationApi);
+
   currentStep: RegistrationStep = 1;
-  completed = false;
   restoredDraft = false;
   showPassword = false;
   showPasswordConfirmation = false;
 
   manager: ManagerDraft = this.createManagerDraft();
   business: BusinessDraft = this.createBusinessDraft();
+  documents: RegistrationDocument[] = [];
+  documentsLoading = false;
+  documentsError = '';
   errors: Record<string, string> = {};
 
   ngOnInit(): void {
@@ -55,7 +76,6 @@ export class ProviderRegistration implements OnInit {
   }
 
   startRegistration(): void {
-    this.completed = false;
     this.currentStep = 2;
     this.errors = {};
     this.saveDraft();
@@ -77,14 +97,16 @@ export class ProviderRegistration implements OnInit {
 
       if (Object.keys(this.errors).length > 0) return;
 
-      this.completed = true;
+      this.currentStep = 4;
       this.saveDraft();
+      this.loadDocumentTypes();
     }
   }
 
   back(): void {
-    if (this.currentStep === 3) {
-      this.completed = false;
+    if (this.currentStep === 4) {
+      this.currentStep = 3;
+    } else if (this.currentStep === 3) {
       this.currentStep = 2;
     } else if (this.currentStep === 2) {
       this.currentStep = 1;
@@ -94,16 +116,9 @@ export class ProviderRegistration implements OnInit {
     this.saveDraft();
   }
 
-  editBusiness(): void {
-    this.completed = false;
-    this.errors = {};
-    this.saveDraft();
-  }
-
   saveDraft(): void {
     const draft: RegistrationDraft = {
       step: this.currentStep,
-      completed: this.completed,
       manager: {
         name: this.manager.name,
         lastnameP: this.manager.lastnameP,
@@ -119,12 +134,12 @@ export class ProviderRegistration implements OnInit {
 
   clearDraft(): void {
     this.currentStep = 1;
-    this.completed = false;
     this.restoredDraft = false;
     this.showPassword = false;
     this.showPasswordConfirmation = false;
     this.manager = this.createManagerDraft();
     this.business = this.createBusinessDraft();
+    this.clearDocuments();
     this.errors = {};
     sessionStorage.removeItem(DRAFT_KEY);
   }
@@ -138,7 +153,6 @@ export class ProviderRegistration implements OnInit {
       if (!draft.manager || !draft.business) return;
 
       this.currentStep = this.isRegistrationStep(draft.step) ? draft.step : 1;
-      this.completed = Boolean(draft.completed) && this.currentStep === 3;
       this.manager = {
         ...this.createManagerDraft(),
         name: typeof draft.manager.name === 'string' ? draft.manager.name : '',
@@ -159,9 +173,64 @@ export class ProviderRegistration implements OnInit {
             : '',
       };
       this.restoredDraft = true;
+
+      if (this.currentStep === 4) {
+        this.loadDocumentTypes();
+      }
     } catch {
       sessionStorage.removeItem(DRAFT_KEY);
     }
+  }
+
+  onDocumentSelected(document: RegistrationDocument, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.item(0);
+    if (!file) return;
+
+    this.clearDocumentPreview(document);
+    document.file = undefined;
+    document.fileName = undefined;
+    document.fileSize = undefined;
+    document.error = undefined;
+
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+      document.status = 'error';
+      document.error = 'Selecciona un archivo PDF, JPG, PNG o WEBP.';
+      input.value = '';
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      document.status = 'error';
+      document.error = 'El archivo no puede superar los 15 MB.';
+      input.value = '';
+      return;
+    }
+
+    document.file = file;
+    document.fileName = file.name;
+    document.fileSize = this.formatFileSize(file.size);
+    document.previewUrl =
+      typeof URL.createObjectURL === 'function' ? URL.createObjectURL(file) : undefined;
+    document.status = 'ready';
+  }
+
+  removeDocument(document: RegistrationDocument, input: HTMLInputElement): void {
+    this.clearDocumentPreview(document);
+    document.file = undefined;
+    document.fileName = undefined;
+    document.fileSize = undefined;
+    document.error = undefined;
+    document.status = 'pending';
+    input.value = '';
+  }
+
+  isImage(document: RegistrationDocument): boolean {
+    return Boolean(document.file?.type.startsWith('image/'));
+  }
+
+  retryDocumentTypes(): void {
+    this.loadDocumentTypes();
   }
 
   private validateManager(): Record<string, string> {
@@ -217,7 +286,46 @@ export class ProviderRegistration implements OnInit {
   }
 
   private isRegistrationStep(value: unknown): value is RegistrationStep {
-    return value === 1 || value === 2 || value === 3;
+    return value === 1 || value === 2 || value === 3 || value === 4;
+  }
+
+  private loadDocumentTypes(): void {
+    if (!this.business.supplierType) return;
+
+    this.clearDocuments();
+    this.documentsLoading = true;
+    this.documentsError = '';
+
+    this.registrationApi
+      .getDocumentTypes(this.business.supplierType)
+      .pipe(take(1))
+      .subscribe({
+        next: ({ data }) => {
+          this.documents = data.map((document) => ({ ...document, status: 'pending' }));
+          this.documentsLoading = false;
+        },
+        error: () => {
+          this.documentsLoading = false;
+          this.documentsError = 'No pudimos obtener los documentos requeridos. Intenta nuevamente.';
+        },
+      });
+  }
+
+  private clearDocuments(): void {
+    this.documents.forEach((document) => this.clearDocumentPreview(document));
+    this.documents = [];
+    this.documentsLoading = false;
+    this.documentsError = '';
+  }
+
+  private clearDocumentPreview(document: RegistrationDocument): void {
+    if (document.previewUrl) URL.revokeObjectURL(document.previewUrl);
+    document.previewUrl = undefined;
+  }
+
+  private formatFileSize(size: number): string {
+    if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   private createManagerDraft(): ManagerDraft {
