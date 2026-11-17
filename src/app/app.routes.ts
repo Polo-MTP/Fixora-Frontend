@@ -48,6 +48,12 @@ export const routes: Routes = [
   },
 
   {
+    path: 'estado-solicitud',
+    loadComponent: () =>
+      import('./pages/application-status').then((m) => m.ApplicationStatus),
+  },
+
+  {
     path: '**',
     loadComponent: () => import('./pages/message').then((m) => m.Message),
     data: { title: 'Página no encontrada', message: 'La ruta solicitada no existe.' },

@@ -9,10 +9,22 @@ export interface Tokens {
   refreshToken: string;
 }
 
-interface LoginResponse {
-  user: { role: string };
-  tokens: Tokens;
+export interface LoginUser {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
 }
+
+export type LoginResult =
+  {
+    user: LoginUser;
+    tokens: Tokens;
+  }
+  | {
+    nextStep: 'third-factor';
+    challengeId: string;
+  };
 
 interface MeResponse {
   data: { user: { role: string } };
@@ -24,10 +36,18 @@ export class AuthApi {
   private readonly session = inject(SessionService);
   private refreshRequest: Observable<Tokens> | null = null;
 
-  login(email: string, password: string): Observable<LoginResponse> {
-    return this.http
-      .post<LoginResponse>('/api/auth/login', { email, password })
-      .pipe(tap(({ user, tokens }) => this.session.save({ ...tokens, role: user.role })));
+  login(email: string, password: string): Observable<LoginResult> {
+    return this.http.post<LoginResult>('/api/auth/login', { email, password }).pipe(
+      tap((result) => {
+        // Un desafío adicional aún no es una sesión autenticada.
+        if ('tokens' in result) {
+          this.session.save({
+            ...result.tokens,
+            role: result.user.role,
+          });
+        }
+      }),
+    );
   }
 
   me(): Observable<MeResponse> {
