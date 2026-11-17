@@ -1,0 +1,73 @@
+<section class="login-page" aria-labelledby="login-title">
+    <div class="login-card">
+        <aside class="login-card__intro">
+            <span class="login-card__eyebrow">Portal Fixora</span>
+            <h1>Bienvenido de nuevo</h1>
+            <p>
+                Inicia sesión para continuar. Fixora te llevará al área correspondiente
+                según tu cuenta.
+            </p>
+            <span class="login-card__mark" aria-hidden="true">Fixora</span>
+        </aside>
+
+        <div class="login-card__form">
+            <p class="login-card__eyebrow login-card__eyebrow--orange">Acceso seguro</p>
+            <h2 id="login-title">Iniciar sesión</h2>
+            <p class="login-card__description">
+                Ingresa el correo y la contraseña de tu cuenta.
+            </p>
+
+            <form #loginForm="ngForm" (ngSubmit)="submit()">
+                <label class="form-field" for="email">
+                    <span>Correo electrónico</span>
+                    <input id="email" type="email" name="email" [(ngModel)]="email" required email
+                        autocomplete="username" placeholder="Ingresa tu correo eléctronico" #emailInput="ngModel" />
+                    @if (emailInput.invalid && emailInput.touched) {
+                    <small class="form-field__error">Escribe un correo válido.</small>
+                    }
+                </label>
+
+                <label class="form-field" for="password">
+                    <span>Contraseña</span>
+                    <div class="password-input">
+                        <input id="password" [type]="showPassword ? 'text' : 'password'" name="password"
+                            [(ngModel)]="password" required autocomplete="current-password"
+                            placeholder="Ingresa tu contraseña" #passwordInput="ngModel" />
+                        <button class="password-input__toggle" type="button" (click)="showPassword = !showPassword"
+                            [attr.aria-pressed]="showPassword"
+                            [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                            {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+                        </button>
+                    </div>
+                    @if (passwordInput.invalid && passwordInput.touched) {
+                    <small class="form-field__error">Ingresa tu contraseña.</small>
+                    }
+                </label>
+
+                @if (errorMessage()) {
+                <p class="form-message form-message--error" role="alert">
+                    {{ errorMessage() }}
+                </p>
+                }
+
+                @if (thirdFactorPending()) {
+                <p class="form-message" role="status">
+                    Tu cuenta requiere un paso adicional de verificación.
+                </p>
+                }
+
+                <button class="login-button" type="submit" [disabled]="loading() || loginForm.invalid">
+                    {{ loading() ? 'Verificando…' : 'Iniciar sesión' }}
+                    @if (!loading()) {
+                    <span aria-hidden="true">→</span>
+                    }
+                </button>
+            </form>
+
+            <p class="login-card__help">
+                ¿Buscas ofrecer tus servicios?
+                <a routerLink="/registro-proveedor">Regístrate como proveedor</a>
+            </p>
+        </div>
+    </div>
+</section>

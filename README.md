@@ -93,14 +93,39 @@ Cada pull request pasa además por el workflow `Conventional Commits`, que revis
 
 ## Landing pública
 
-La ruta `/` muestra la landing pública de Fixora. Incluye la presentación del servicio,
-las categorías principales y una explicación del flujo para solicitar ayuda.
+La ruta `/` muestra la landing pública de Fixora. Incluye la presentación del
+servicio, las categorías principales y una explicación del flujo para solicitar
+ayuda.
 
-Los botones “Quiero ser proveedor” llevan a `/registro-proveedor`. Esa ruta es el punto
-de entrada al registro de proveedores. `/login` conserva el formulario de inicio de sesión.
+Los botones “Quiero ser proveedor” llevan a `/registro-proveedor`, el punto de
+entrada al registro de proveedores.
 
-Las pruebas unitarias se ejecutan con:
+## Pruebas unitarias
 
-```bash
-pnpm test
-pnpm.cmd exec ng test --watch=false
+En PowerShell, ejecuta todas las pruebas unitarias sin modo interactivo:
+
+```powershell
+pnpm.cmd test --watch=false
+
+## Login web — FRONTENDAN-3
+La ruta /login envía el correo y la contraseña a POST /api/auth/login.
+Durante la solicitud, el formulario muestra el estado de carga y presenta los
+errores de autenticación que devuelve la API.
+
+Cuando el login es exitoso, el Frontend conserva los tokens en sessionStorage
+y redirige según el rol, por ejemplo, a /administrador o /soporte. Solo
+conserva un returnUrl cuando corresponde al rol autenticado o a la ruta
+general /inicio.
+
+Para un proveedor cuyo estado sea POR_APROBAR, el Backend responde con un
+login exitoso y tokens con alcance limitado supplier_application. El Frontend
+conserva esa sesión y redirige a /estado-solicitud. El acceso limitado lo
+controla el Backend; no habilita las demás rutas protegidas.
+
+/estado-solicitud es provisional. La vista detallada del estado y el reenvío
+de documentos corresponden al Sprint 3.
+
+El tipo de respuesta del login reserva la variante
+nextStep: "third-factor" con un challengeId. El Frontend conserva ese
+identificador como punto de extensión; el desafío todavía no está implementado
+y la API actual no devuelve esa variante.
