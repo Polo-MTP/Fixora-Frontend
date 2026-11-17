@@ -129,3 +129,21 @@ El tipo de respuesta del login reserva la variante
 nextStep: "third-factor" con un challengeId. El Frontend conserva ese
 identificador como punto de extensión; el desafío todavía no está implementado
 y la API actual no devuelve esa variante.
+
+## Panel de administración — FRONTENDAN-7
+La ruta /administrador muestra el dashboard visual de administración. Sus
+métricas y ejemplos son ilustrativos; no representan datos consultados a la API.
+
+La bandeja de verificaciones está en /administrador/verificaciones y el
+desglose de una solicitud en
+/administrador/verificaciones/:id. Ambas rutas requieren el rol
+administrador.
+
+La bandeja consulta GET /api/admin/supplier-applications y permite filtrar
+por estado y buscar solicitudes. La API actual admite estado, búsqueda,
+paginación y límite; los filtros por tipo y fecha quedan pendientes de soporte
+en la API.
+
+El desglose consulta la solicitud y permite obtener una URL temporal para
+previsualizar documentos, revisar documentos y enviar la resolución de la
+solicitud mediante los endpoints de administración de la API.
