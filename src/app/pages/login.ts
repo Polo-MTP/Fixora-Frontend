@@ -102,9 +102,7 @@ export class Login {
     const returnPath = returnUrl.split(/[?#]/, 1)[0];
     const requestedRole = returnPath.slice(1).split('/')[0];
 
-    // Conserva returnUrl solo si corresponde al rol o es la ruta general /inicio.
-    return returnPath === '/inicio' || requestedRole === role
-      ? returnUrl
-      : defaultRoute;
+    // Conserva returnUrl solo si corresponde al rol autenticado.
+    return requestedRole === role ? returnUrl : defaultRoute;
   }
 }

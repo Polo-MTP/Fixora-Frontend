@@ -70,6 +70,31 @@ describe('Login', () => {
         expect(router.navigateByUrl).toHaveBeenCalledWith('/administrador');
     });
 
+    it('redirige al dashboard de administración si returnUrl es /inicio', () => {
+        returnUrl = '/inicio';
+
+        authMock.login.mockReturnValue(
+            of({
+                user: {
+                    id: '10',
+                    email: 'admin@fixora.test',
+                    role: 'administrador',
+                    status: 'ACTIVO',
+                },
+                tokens: {
+                    accessToken: 'access-token',
+                    refreshToken: 'refresh-token',
+                },
+            }),
+        );
+
+        component.email = 'admin@fixora.test';
+        component.password = 'clave-valida';
+        component.submit();
+
+        expect(router.navigateByUrl).toHaveBeenCalledWith('/administrador');
+    });
+
     it('redirige a soporte después de iniciar sesión', () => {
         authMock.login.mockReturnValue(
             of({

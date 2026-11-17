@@ -108,3 +108,7 @@ nav a.header-cta:focus-visible {
   color: #fff;
   background-color: #e94c25;
 }
+
+.app-main--admin {
+  min-height: 100vh;
+}

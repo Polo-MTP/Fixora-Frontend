@@ -1,0 +1,177 @@
+<app-admin-shell>
+    <a class="back-link" routerLink="/administrador/verificaciones">← Volver a verificaciones</a>
+
+    @if (loading()) {
+    <p class="feedback" role="status">Cargando solicitud…</p>
+    } @else if (errorMessage() && !application()) {
+    <p class="feedback feedback--error" role="alert">{{ errorMessage() }}</p>
+    } @else if (application(); as item) {
+    <header class="detail-heading">
+        <div class="heading-person">
+            <a class="back-icon" routerLink="/administrador/verificaciones" aria-label="Regresar">←</a>
+            <div class="avatar">{{ item.manager_name.slice(0, 1) || 'P' }}</div>
+            <div>
+                <h1>{{ item.manager_name || 'Proveedor' }}</h1>
+                <p>{{ item.business_name }} · Folio VR-{{ item.id }} · Enviada {{ item.application_date | date:
+                    'mediumDate' }}</p>
+            </div>
+        </div>
+        <span class="status-badge" [class]="statusClass(item.state)">
+            {{ statusLabel(item.state) }}
+        </span>
+    </header>
+
+    <section class="review-layout">
+        <aside class="documents-card">
+            <h2>Documentos</h2>
+            @if (item.documents.length === 0) {
+            <p class="muted">No hay documentos registrados.</p>
+            } @else {
+            <nav aria-label="Documentos de la solicitud">
+                @for (document of item.documents; track document.id) {
+                <button type="button" class="document-option"
+                    [class.document-option--active]="selectedDocument()?.id === document.id"
+                    (click)="selectDocument(document)">
+                    <span class="file-icon" aria-hidden="true">▤</span>
+                    <span class="document-option__text">
+                        <strong>{{ document.type_name }}</strong>
+                        <small>{{ document.upload_date | date: 'mediumDate' }}</small>
+                    </span>
+                    <span class="document-check" aria-label="Estado">
+                        @if (document.validation?.result === 'aprobado') { ✓ }
+                        @else if (document.validation?.result === 'rechazado') { ! }
+                        @else { · }
+                    </span>
+                </button>
+                }
+            </nav>
+            }
+        </aside>
+
+        <section class="preview-card" aria-label="Vista previa del documento">
+            @if (selectedDocument(); as document) {
+            <header class="preview-toolbar">
+                <strong>{{ document.type_name }}</strong>
+                <a [href]="previewUrl()" target="_blank" rel="noopener">Abrir en otra pestaña ↗</a>
+            </header>
+
+            @if (previewLoading()) {
+            <p class="preview-message" role="status">Preparando vista previa segura…</p>
+            } @else if (previewError()) {
+            <p class="preview-message preview-message--error" role="alert">{{ previewError() }}</p>
+            } @else if (previewUrl() && isPdf(document.file_key)) {
+            <iframe [src]="safePreviewUrl()" [title]="'Vista previa: ' + document.type_name"></iframe>
+            } @else if (previewUrl()) {
+            <div class="image-preview">
+                <img [src]="previewUrl()" [alt]="'Documento: ' + document.type_name" />
+            </div>
+            }
+
+            <div class="document-actions">
+                <button class="button button--outline" type="button" [disabled]="saving() || item.state !== 'pendiente'"
+                    (click)="reviewDocument('rechazado')">
+                    Rechazar documento
+                </button>
+                <button class="button button--primary" type="button" [disabled]="saving() || item.state !== 'pendiente'"
+                    (click)="reviewDocument('aprobado')">
+                    Aprobar documento
+                </button>
+            </div>
+            } @else {
+            <p class="preview-message">Selecciona un documento para revisarlo.</p>
+            }
+        </section>
+
+        <aside class="review-info">
+            <article class="info-card">
+                <h2>Datos declarados</h2>
+                <dl>
+                    <dt>Encargado</dt>
+                    <dd>{{ item.manager_name || 'No disponible' }}</dd>
+                    <dt>Correo</dt>
+                    <dd>{{ item.email }}</dd>
+                    <dt>Negocio</dt>
+                    <dd>{{ item.business?.name || item.business_name }}</dd>
+                    <dt>RFC</dt>
+                    <dd>{{ item.rfc || 'No proporcionado' }}</dd>
+                    @if (item.branches[0]; as branch) {
+                    <dt>Dirección</dt>
+                    <dd>
+                        {{ branch.address.street }} {{ branch.address.num_ext }},
+                        {{ branch.address.colony }}, {{ branch.address.municipality }},
+                        {{ branch.address.state }} {{ branch.address.postal_code }}
+                    </dd>
+                    }
+                </dl>
+            </article>
+
+            <article class="info-card validation-card">
+                <h2>Revisión del documento</h2>
+                @if (selectedDocument(); as document) {
+                <p class="validation-result">
+                    Resultado:
+                    <strong>{{ document.validation?.result || 'Pendiente de revisión' }}</strong>
+                </p>
+                @if (document.validation?.comment) {
+                <p class="validation-comment">{{ document.validation?.comment }}</p>
+                }
+                } @else {
+                <p class="muted">Selecciona un documento para ver su revisión.</p>
+                }
+                <p class="muted">
+                    La API no proporciona datos OCR para comparar automáticamente el contenido del archivo.
+                </p>
+            </article>
+
+            @if (item.branches.length) {
+            <article class="info-card">
+                <h2>Local y servicio</h2>
+                @for (branch of item.branches; track branch.id) {
+                <strong>{{ branch.name }}</strong>
+                @for (category of branch.categories; track category.category_id) {
+                <p class="muted">
+                    {{ category.category_name }} · {{ category.base_price | currency: 'MXN' }}
+                </p>
+                }
+                }
+            </article>
+            }
+        </aside>
+    </section>
+
+    <section class="provider-note">
+        <label for="provider-comment">Nota para el proveedor</label>
+        <textarea id="provider-comment" rows="3" maxlength="2000" [value]="providerComment()"
+            (input)="providerComment.set($any($event.target).value)"
+            placeholder="Escribe el motivo del rechazo o los documentos que debe corregir."></textarea>
+        <small>Obligatoria para rechazar la solicitud o pedir correcciones.</small>
+    </section>
+
+    @if (errorMessage()) {
+    <p class="action-message action-message--error" role="alert">{{ errorMessage() }}</p>
+    }
+    @if (actionMessage()) {
+    <p class="action-message" role="status">{{ actionMessage() }}</p>
+    }
+
+    <footer class="decision-bar">
+        <span class="pending-count">
+            {{ item.documents_pending }} documentos faltantes o pendientes de aprobar
+        </span>
+        <div class="decision-actions">
+            <button class="button button--outline" type="button" [disabled]="saving() || item.state !== 'pendiente'"
+                (click)="resolveApplication('rechazada')">
+                Rechazar solicitud
+            </button>
+            <button class="button button--secondary" type="button" [disabled]="saving() || item.state !== 'pendiente'"
+                (click)="resolveApplication('documentacion_incompleta')">
+                Pedir corrección
+            </button>
+            <button class="button button--primary" type="button" [disabled]="saving() || item.state !== 'pendiente'"
+                (click)="resolveApplication('aprobada')">
+                {{ saving() ? 'Guardando…' : 'Aprobar proveedor' }}
+            </button>
+        </div>
+    </footer>
+    }
+</app-admin-shell>

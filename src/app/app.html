@@ -1,3 +1,4 @@
+@if (!isAdminPage()) {
 <header>
   <a class="brand" routerLink="/" aria-label="Fixora, inicio">Fixora</a>
 
@@ -16,7 +17,8 @@
   </nav>
   }
 </header>
+}
 
-<main>
+<main [class.app-main--admin]="isAdminPage()">
   <router-outlet />
 </main>
