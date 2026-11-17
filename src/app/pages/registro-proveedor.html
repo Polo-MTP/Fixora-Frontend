@@ -1,0 +1,381 @@
+<section class="registration-page" aria-labelledby="registration-title">
+  <div class="registration-shell">
+    <aside class="registration-aside">
+      <a class="registration-aside__brand" routerLink="/" aria-label="Fixora, inicio">Fixora</a>
+
+      <div class="registration-aside__copy">
+        <p class="registration-aside__eyebrow">Registro de proveedor</p>
+        <h1 id="registration-title">Haz crecer tu negocio con Fixora.</h1>
+        <p>Cuéntanos lo esencial para comenzar tu solicitud de registro.</p>
+      </div>
+
+      <ol class="registration-steps" aria-label="Progreso del registro">
+        <li [class.registration-steps__item--active]="currentStep === 1">
+          <span>1</span> Conoce el proceso
+        </li>
+        <li [class.registration-steps__item--active]="currentStep === 2">
+          <span>2</span> Datos del encargado
+        </li>
+        <li [class.registration-steps__item--active]="currentStep === 3">
+          <span>3</span> Datos del negocio
+        </li>
+      </ol>
+
+      <p class="registration-aside__help">
+        Tus avances se guardan en esta sesión para que puedas continuar entre pasos.
+      </p>
+    </aside>
+
+    <main class="registration-content">
+      <div class="registration-content__topline">
+        <a routerLink="/" class="back-link">← Volver al inicio</a>
+        @if (currentStep > 1 || restoredDraft) {
+          <button class="text-button" type="button" (click)="clearDraft()">Borrar avance</button>
+        }
+      </div>
+
+      @if (restoredDraft) {
+        <p class="saved-notice" role="status">
+          Recuperamos tu avance. Por seguridad, vuelve a escribir tu contraseña antes de continuar.
+        </p>
+      }
+
+      @if (currentStep === 1) {
+        <div class="registration-panel registration-panel--intro">
+          <p class="eyebrow">Paso 1 de 3</p>
+          <h2>Todo empieza con tu negocio.</h2>
+          <p class="registration-panel__lead">
+            Completarás una breve solicitud con los datos del encargado y la información principal
+            del negocio.
+          </p>
+
+          <div class="process-cards">
+            <article>
+              <span class="process-cards__number">01</span>
+              <h3>Identifica al encargado</h3>
+              <p>Usaremos estos datos para crear y proteger la cuenta del proveedor.</p>
+            </article>
+            <article>
+              <span class="process-cards__number">02</span>
+              <h3>Presenta tu negocio</h3>
+              <p>Indica cómo pueden contactar tu negocio y si operas con sucursales.</p>
+            </article>
+            <article>
+              <span class="process-cards__number">03</span>
+              <h3>Completa tu solicitud</h3>
+              <p>Después podrás agregar tus sucursales, servicios y documentos de verificación.</p>
+            </article>
+          </div>
+
+          <button class="primary-button" type="button" (click)="startRegistration()">
+            Seguir <span aria-hidden="true">→</span>
+          </button>
+          <p class="registration-panel__footnote">Toma aproximadamente 3 minutos.</p>
+        </div>
+      } @else if (currentStep === 2) {
+        <form class="registration-panel" (ngSubmit)="continue()" novalidate>
+          <p class="eyebrow">Paso 2 de 3</p>
+          <h2>¿Quién estará a cargo?</h2>
+          <p class="registration-panel__lead">
+            Esta persona será el contacto principal y tendrá acceso a la cuenta del proveedor.
+          </p>
+
+          <div class="form-grid form-grid--two-columns">
+            <label class="form-field" for="manager-name">
+              <span>Nombre</span>
+              <input
+                id="manager-name"
+                name="managerName"
+                type="text"
+                autocomplete="given-name"
+                [(ngModel)]="manager.name"
+                (ngModelChange)="saveDraft()"
+                [attr.aria-invalid]="!!errors['managerName']"
+              />
+              @if (errors['managerName']) {
+                <small>{{ errors['managerName'] }}</small>
+              }
+            </label>
+
+            <label class="form-field" for="manager-lastname-p">
+              <span>Apellido paterno</span>
+              <input
+                id="manager-lastname-p"
+                name="managerLastnameP"
+                type="text"
+                autocomplete="family-name"
+                [(ngModel)]="manager.lastnameP"
+                (ngModelChange)="saveDraft()"
+                [attr.aria-invalid]="!!errors['managerLastnameP']"
+              />
+              @if (errors['managerLastnameP']) {
+                <small>{{ errors['managerLastnameP'] }}</small>
+              }
+            </label>
+
+            <label class="form-field" for="manager-lastname-m">
+              <span>Apellido materno <em>Opcional</em></span>
+              <input
+                id="manager-lastname-m"
+                name="managerLastnameM"
+                type="text"
+                autocomplete="additional-name"
+                [(ngModel)]="manager.lastnameM"
+                (ngModelChange)="saveDraft()"
+              />
+            </label>
+
+            <label class="form-field" for="manager-phone">
+              <span>Teléfono <em>Opcional</em></span>
+              <input
+                id="manager-phone"
+                name="managerPhone"
+                type="tel"
+                inputmode="numeric"
+                autocomplete="tel"
+                placeholder="10 dígitos"
+                [(ngModel)]="manager.phone"
+                (ngModelChange)="saveDraft()"
+                [attr.aria-invalid]="!!errors['managerPhone']"
+              />
+              @if (errors['managerPhone']) {
+                <small>{{ errors['managerPhone'] }}</small>
+              }
+            </label>
+          </div>
+
+          <label class="form-field" for="manager-email">
+            <span>Correo electrónico</span>
+            <input
+              id="manager-email"
+              name="managerEmail"
+              type="email"
+              autocomplete="email"
+              placeholder="nombre@correo.com"
+              [(ngModel)]="manager.email"
+              (ngModelChange)="saveDraft()"
+              [attr.aria-invalid]="!!errors['managerEmail']"
+            />
+            @if (errors['managerEmail']) {
+              <small>{{ errors['managerEmail'] }}</small>
+            }
+          </label>
+
+          <div class="form-grid form-grid--two-columns">
+            <label class="form-field" for="manager-password">
+              <span>Contraseña</span>
+              <div class="password-field">
+                <input
+                  id="manager-password"
+                  name="managerPassword"
+                  [type]="showPassword ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  [(ngModel)]="manager.password"
+                  (ngModelChange)="saveDraft()"
+                  [attr.aria-invalid]="!!errors['managerPassword']"
+                />
+                <button
+                  type="button"
+                  (click)="showPassword = !showPassword"
+                  [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                >
+                  {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+                </button>
+              </div>
+              @if (errors['managerPassword']) {
+                <small>{{ errors['managerPassword'] }}</small>
+              }
+            </label>
+
+            <label class="form-field" for="manager-password-confirmation">
+              <span>Confirmar contraseña</span>
+              <div class="password-field">
+                <input
+                  id="manager-password-confirmation"
+                  name="managerPasswordConfirmation"
+                  [type]="showPasswordConfirmation ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  [(ngModel)]="manager.passwordConfirmation"
+                  (ngModelChange)="saveDraft()"
+                  [attr.aria-invalid]="!!errors['managerPasswordConfirmation']"
+                />
+                <button
+                  type="button"
+                  (click)="showPasswordConfirmation = !showPasswordConfirmation"
+                  [attr.aria-label]="
+                    showPasswordConfirmation ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                  "
+                >
+                  {{ showPasswordConfirmation ? 'Ocultar' : 'Mostrar' }}
+                </button>
+              </div>
+              @if (errors['managerPasswordConfirmation']) {
+                <small>{{ errors['managerPasswordConfirmation'] }}</small>
+              }
+            </label>
+          </div>
+
+          <p class="security-note">
+            La contraseña no se guarda en el avance y tendrás que escribirla nuevamente si recargas
+            la página.
+          </p>
+
+          <div class="form-actions">
+            <button class="secondary-button" type="button" (click)="back()">Anterior</button>
+            <button class="primary-button" type="submit">
+              Continuar <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </form>
+      } @else {
+        <form class="registration-panel" (ngSubmit)="continue()" novalidate>
+          @if (completed) {
+            <div class="registration-complete" aria-live="polite">
+              <span class="registration-complete__icon" aria-hidden="true">✓</span>
+              <p class="eyebrow">Avance guardado</p>
+              <h2>Tu información inicial está lista.</h2>
+              <p class="registration-panel__lead">
+                En la siguiente etapa podrás agregar tus sucursales, servicios y documentación para
+                enviar la solicitud a revisión.
+              </p>
+
+              <dl class="summary-list">
+                <div>
+                  <dt>Encargado</dt>
+                  <dd>{{ manager.name }} {{ manager.lastnameP }}</dd>
+                </div>
+                <div>
+                  <dt>Negocio</dt>
+                  <dd>{{ business.name }}</dd>
+                </div>
+                <div>
+                  <dt>Operación</dt>
+                  <dd>
+                    {{ business.supplierType === 'empresa' ? 'Con sucursales' : 'Independiente' }}
+                  </dd>
+                </div>
+              </dl>
+
+              <div class="form-actions">
+                <button class="secondary-button" type="button" (click)="editBusiness()">
+                  Editar datos
+                </button>
+                <a class="primary-button" routerLink="/">Volver al inicio</a>
+              </div>
+            </div>
+          } @else {
+            <p class="eyebrow">Paso 3 de 3</p>
+            <h2>Háblanos de tu negocio.</h2>
+            <p class="registration-panel__lead">
+              Esta información se mostrará durante el proceso de verificación y será el punto de
+              partida para registrar tus locales.
+            </p>
+
+            <label class="form-field" for="business-name">
+              <span>Nombre del negocio</span>
+              <input
+                id="business-name"
+                name="businessName"
+                type="text"
+                autocomplete="organization"
+                placeholder="Ej. Soluciones García"
+                [(ngModel)]="business.name"
+                (ngModelChange)="saveDraft()"
+                [attr.aria-invalid]="!!errors['businessName']"
+              />
+              @if (errors['businessName']) {
+                <small>{{ errors['businessName'] }}</small>
+              }
+            </label>
+
+            <div class="form-grid form-grid--two-columns">
+              <label class="form-field" for="business-phone">
+                <span>Teléfono del negocio</span>
+                <input
+                  id="business-phone"
+                  name="businessPhone"
+                  type="tel"
+                  inputmode="numeric"
+                  autocomplete="tel"
+                  placeholder="10 dígitos"
+                  [(ngModel)]="business.phone"
+                  (ngModelChange)="saveDraft()"
+                  [attr.aria-invalid]="!!errors['businessPhone']"
+                />
+                @if (errors['businessPhone']) {
+                  <small>{{ errors['businessPhone'] }}</small>
+                }
+              </label>
+
+              <label class="form-field" for="business-email">
+                <span>Correo del negocio</span>
+                <input
+                  id="business-email"
+                  name="businessEmail"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="contacto@negocio.com"
+                  [(ngModel)]="business.email"
+                  (ngModelChange)="saveDraft()"
+                  [attr.aria-invalid]="!!errors['businessEmail']"
+                />
+                @if (errors['businessEmail']) {
+                  <small>{{ errors['businessEmail'] }}</small>
+                }
+              </label>
+            </div>
+
+            <fieldset class="provider-type" [attr.aria-invalid]="!!errors['supplierType']">
+              <legend>¿Cómo opera tu negocio?</legend>
+              <p>Podrás agregar el detalle de cada local en el siguiente registro.</p>
+              <div class="provider-type__options">
+                <label
+                  [class.provider-type__option--selected]="
+                    business.supplierType === 'independiente'
+                  "
+                >
+                  <input
+                    type="radio"
+                    name="supplierType"
+                    value="independiente"
+                    [(ngModel)]="business.supplierType"
+                    (ngModelChange)="saveDraft()"
+                  />
+                  <span>
+                    <strong>Independiente</strong>
+                    <small>Atiendo desde un solo local o de forma móvil.</small>
+                  </span>
+                </label>
+                <label
+                  [class.provider-type__option--selected]="business.supplierType === 'empresa'"
+                >
+                  <input
+                    type="radio"
+                    name="supplierType"
+                    value="empresa"
+                    [(ngModel)]="business.supplierType"
+                    (ngModelChange)="saveDraft()"
+                  />
+                  <span>
+                    <strong>Con sucursales</strong>
+                    <small>Registro uno o más locales de atención.</small>
+                  </span>
+                </label>
+              </div>
+              @if (errors['supplierType']) {
+                <small class="provider-type__error">{{ errors['supplierType'] }}</small>
+              }
+            </fieldset>
+
+            <div class="form-actions">
+              <button class="secondary-button" type="button" (click)="back()">Anterior</button>
+              <button class="primary-button" type="submit">
+                Guardar avance <span aria-hidden="true">✓</span>
+              </button>
+            </div>
+          }
+        </form>
+      }
+    </main>
+  </div>
+</section>
