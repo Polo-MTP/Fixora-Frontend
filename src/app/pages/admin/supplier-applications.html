@@ -1,0 +1,146 @@
+<app-admin-shell>
+    <header class="page-heading">
+        <div>
+            <p class="eyebrow">Panel de administración</p>
+            <h1>Verificaciones pendientes</h1>
+            <p class="page-description">
+                Consulta las solicitudes de proveedores y abre su desglose.
+            </p>
+        </div>
+
+        <button class="button button--secondary" type="button" (click)="load()">
+            Actualizar
+        </button>
+    </header>
+
+    <section class="filters" aria-label="Filtros de solicitudes">
+        <form class="search-form" (ngSubmit)="search()">
+            <label for="application-search">Buscar proveedor</label>
+            <div class="search-form__controls">
+                <input id="application-search" name="search" type="search" maxlength="150"
+                    placeholder="Nombre, negocio o correo" [(ngModel)]="searchText" />
+                <button class="button button--primary" type="submit">Buscar</button>
+            </div>
+        </form>
+
+        <label class="filter-field">
+            <span>Estado</span>
+            <select [ngModel]="selectedState()" [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="changeState($event)">
+                <option value="">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobada">Aprobada</option>
+                <option value="rechazada">Rechazada</option>
+                <option value="documentacion_incompleta">Documentación incompleta</option>
+            </select>
+        </label>
+
+        <label class="filter-field">
+            <span>Tipo</span>
+            <select disabled aria-describedby="api-filter-note">
+                <option>Todos los tipos</option>
+            </select>
+        </label>
+
+        <label class="filter-field">
+            <span>Fecha desde</span>
+            <input type="date" disabled aria-describedby="api-filter-note" />
+        </label>
+
+        <label class="filter-field">
+            <span>Fecha hasta</span>
+            <input type="date" disabled aria-describedby="api-filter-note" />
+        </label>
+
+        <button class="clear-button" type="button" (click)="clearFilters()">
+            Limpiar
+        </button>
+    </section>
+
+    <p id="api-filter-note" class="filter-note">
+        Los filtros por tipo y fecha estarán disponibles cuando la API los admita.
+    </p>
+
+    <section class="results-card" aria-labelledby="results-title">
+        <div class="results-card__heading">
+            <div>
+                <h2 id="results-title">Solicitudes</h2>
+                @if (pagination(); as pageInfo) {
+                <p>{{ pageInfo.total }} solicitudes encontradas</p>
+                }
+            </div>
+        </div>
+
+        @if (loading()) {
+        <p class="feedback" role="status">Cargando solicitudes…</p>
+        } @else if (errorMessage()) {
+        <div class="feedback feedback--error" role="alert">
+            <p>{{ errorMessage() }}</p>
+            <button class="button button--secondary" type="button" (click)="load()">
+                Reintentar
+            </button>
+        </div>
+        } @else if (rows().length === 0) {
+        <p class="feedback">No hay solicitudes que coincidan con los filtros.</p>
+        } @else {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Proveedor</th>
+                        <th scope="col">Negocio</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Enviada</th>
+                        <th scope="col">Documentos pendientes</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @for (application of rows(); track application.id) {
+                    <tr>
+                        <td>
+                            <strong>{{ application.manager_name || 'Sin nombre' }}</strong>
+                            <span class="secondary-text">{{ application.email }}</span>
+                        </td>
+                        <td>{{ application.business_name }}</td>
+                        <td>{{ typeLabel(application.supplier_type) }}</td>
+                        <td>{{ application.application_date | date: 'mediumDate' }}</td>
+                        <td>{{ application.documents_pending }}</td>
+                        <td>
+                            <span class="status-badge" [class]="statusClass(application.state)">
+                                {{ statusLabel(application.state) }}
+                            </span>
+                        </td>
+                        <td>
+                            <a class="review-link" [routerLink]="['/administrador/verificaciones', application.id]">
+                                Ver desglose
+                            </a>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (pagination(); as pageInfo) {
+        <nav class="pagination" aria-label="Paginación de solicitudes">
+            <span>
+                Página {{ pageInfo.page }} de {{ pageInfo.total_pages || 1 }}
+            </span>
+            <div>
+                <button class="button button--secondary" type="button" [disabled]="pageInfo.page <= 1 || loading()"
+                    (click)="previousPage()">
+                    Anterior
+                </button>
+                <button class="button button--secondary" type="button"
+                    [disabled]="pageInfo.page >= pageInfo.total_pages || loading()" (click)="nextPage()">
+                    Siguiente
+                </button>
+            </div>
+        </nav>
+        }
+        }
+    </section>
+</app-admin-shell>
