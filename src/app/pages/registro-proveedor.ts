@@ -1,7 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { take } from 'rxjs';
+import { Subscription, finalize, take, timeout } from 'rxjs';
 
 import {
   ProviderRegistrationApi,
@@ -56,8 +56,11 @@ const MAX_FILE_SIZE = 15 * 1024 * 1024;
   templateUrl: './registro-proveedor.html',
   styleUrl: './registro-proveedor.css',
 })
-export class ProviderRegistration implements OnInit {
+export class ProviderRegistration implements OnInit, OnDestroy {
   private readonly registrationApi = inject(ProviderRegistrationApi);
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  private documentsRequest?: Subscription;
+  private loadedSupplierType?: SupplierType;
 
   currentStep: RegistrationStep = 1;
   restoredDraft = false;
@@ -73,6 +76,11 @@ export class ProviderRegistration implements OnInit {
 
   ngOnInit(): void {
     this.restoreDraft();
+  }
+
+  ngOnDestroy(): void {
+    this.documentsRequest?.unsubscribe();
+    this.clearDocuments();
   }
 
   startRegistration(): void {
@@ -290,28 +298,41 @@ export class ProviderRegistration implements OnInit {
   }
 
   private loadDocumentTypes(): void {
-    if (!this.business.supplierType) return;
+    if (!this.business.supplierType) {
+      this.currentStep = 3;
+      return;
+    }
+    if (this.loadedSupplierType === this.business.supplierType) return;
 
+    this.documentsRequest?.unsubscribe();
     this.clearDocuments();
     this.documentsLoading = true;
     this.documentsError = '';
 
-    this.registrationApi
+    this.documentsRequest = this.registrationApi
       .getDocumentTypes(this.business.supplierType)
-      .pipe(take(1))
+      .pipe(
+        timeout(15000),
+        take(1),
+        finalize(() => {
+          this.documentsLoading = false;
+          this.changeDetector.markForCheck();
+        }),
+      )
       .subscribe({
         next: ({ data }) => {
           this.documents = data.map((document) => ({ ...document, status: 'pending' }));
-          this.documentsLoading = false;
+          this.loadedSupplierType = this.business.supplierType || undefined;
         },
         error: () => {
-          this.documentsLoading = false;
           this.documentsError = 'No pudimos obtener los documentos requeridos. Intenta nuevamente.';
         },
       });
   }
 
   private clearDocuments(): void {
+    this.documentsRequest?.unsubscribe();
+    this.loadedSupplierType = undefined;
     this.documents.forEach((document) => this.clearDocumentPreview(document));
     this.documents = [];
     this.documentsLoading = false;
