@@ -1,0 +1,105 @@
+<app-admin-shell>
+  <p class="eyebrow">Pagos y comisiones</p>
+  <h1>Porcentaje de comisión</h1>
+  <p>Consulta la comisión vigente y el historial de cambios.</p>
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="success" role="status">{{ message() }}</p>
+  }
+  <button type="button" class="secondary" (click)="load()" [disabled]="loading() || saving()">
+    Actualizar
+  </button>
+  @if (loading()) {
+    <p role="status">Cargando configuración…</p>
+  }
+  @if (settings(); as data) {
+    <section class="card" aria-labelledby="current-title">
+      <h2 id="current-title">Comisión vigente: {{ data.current.percentage }} %</h2>
+      <p>
+        {{
+          data.current.is_default
+            ? 'Porcentaje predeterminado de la plataforma.'
+            : 'Configurado por administración.'
+        }}
+      </p>
+      <p>
+        Vigente desde:
+        {{
+          data.current.effective_from
+            ? (data.current.effective_from | date: 'dd/MM/yyyy HH:mm')
+            : 'Configuración predeterminada'
+        }}
+      </p>
+      <p class="notice">
+        Los cambios entran en vigor al guardarse. Los ingresos ya registrados conservan su
+        porcentaje original. La programación de vigencias futuras aún no está disponible.
+      </p>
+      <form (ngSubmit)="prepare()">
+        <fieldset [disabled]="loading() || saving() || pendingPercentage() !== null">
+          <label
+            >Nuevo porcentaje<input
+              name="percentage"
+              type="text"
+              inputmode="decimal"
+              maxlength="6"
+              [(ngModel)]="percentage"
+              required
+              placeholder="10.00"
+          /></label>
+          <p class="muted">De 0 a 50 %, con hasta dos decimales.</p>
+          <button type="submit">Revisar cambio</button>
+        </fieldset>
+      </form>
+      @if (pendingPercentage() !== null) {
+        <div class="notice">
+          <p>¿Aplicar {{ pendingPercentage() }} % a los nuevos ingresos desde este momento?</p>
+          <div class="actions">
+            <button type="button" (click)="save()" [disabled]="saving()">
+              {{ saving() ? 'Guardando…' : 'Confirmar porcentaje' }}
+            </button>
+            <button
+              type="button"
+              class="secondary"
+              (click)="pendingPercentage.set(null)"
+              [disabled]="saving()"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+    <section class="card" aria-labelledby="history-title">
+      <h2 id="history-title">Últimos cambios</h2>
+      <p class="muted">
+        Hasta los 20 cambios más recientes. Las fechas se muestran en tu hora local.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Porcentaje</th>
+              <th>Vigente desde</th>
+              <th>Administrador (ID)</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of data.history; track entry.id) {
+              <tr>
+                <td>{{ entry.percentage }} %</td>
+                <td>{{ entry.effective_from | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ entry.created_by }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3">Todavía no hay cambios registrados.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</app-admin-shell>

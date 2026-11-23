@@ -36,6 +36,12 @@ export const routes: Routes = [
       import('./pages/admin/supplier-applications').then((m) => m.SupplierApplications),
   },
   {
+    path: 'administrador/comisiones',
+    canActivate: [roleGuard],
+    data: { roles: ['administrador'] },
+    loadComponent: () => import('./pages/admin/commission-settings').then(m => m.CommissionSettingsPage),
+  },
+  {
     path: 'administrador',
     pathMatch: 'full',
     canActivate: [roleGuard],
