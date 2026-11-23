@@ -1,0 +1,123 @@
+<main class="status-page" aria-labelledby="status-title">
+  <header>
+    <p class="eyebrow">Registro de proveedor</p>
+    <h1 id="status-title">Estado de tu solicitud</h1>
+  </header>
+  @if (!session.current() || session.current()?.role !== 'proveedor') {
+    <p>Inicia sesión con tu cuenta de proveedor para consultar tu solicitud.</p>
+    <a routerLink="/login" [queryParams]="{ returnUrl: '/estado-solicitud' }">Iniciar sesión</a>
+  } @else {
+    <button type="button" (click)="load()" [disabled]="loading() || !!sending()">
+      Actualizar estado
+    </button>
+    @if (loading()) {
+      <p role="status">Consultando tu solicitud…</p>
+    }
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+    @if (message()) {
+      <p class="success" role="status">{{ message() }}</p>
+    }
+    @if (application(); as app) {
+      <section class="summary">
+        <h2>{{ statusLabel(app.state) }}</h2>
+        <p>
+          <strong>{{ app.business_name }}</strong> · Solicitud {{ app.id }}
+        </p>
+        <p>Registrada el {{ app.application_date | date: 'dd/MM/yyyy' }}</p>
+        @switch (app.state) {
+          @case ('pendiente') {
+            <p>Estamos revisando tus datos y documentos. Consulta aquí el resultado.</p>
+          }
+          @case ('aprobada') {
+            <p>
+              Tu solicitud fue aprobada. Vuelve a iniciar sesión para acceder a tu cuenta
+              habilitada.
+            </p>
+            <a routerLink="/login">Ir a iniciar sesión</a>
+          }
+          @case ('rechazada') {
+            <p>Revisa el motivo indicado por administración.</p>
+          }
+          @case ('documentacion_incompleta') {
+            <p>
+              Corrige únicamente las evidencias observadas o faltantes. Al completarlas, tu
+              solicitud regresará a revisión.
+            </p>
+          }
+        }
+        @if (app.comments) {
+          <h3>Comentarios de administración</h3>
+          <p class="comment">{{ app.comments }}</p>
+        }
+      </section>
+      @if (app.documents.length) {
+        <h2>Documentos enviados</h2>
+        <ul class="review-list">
+          @for (doc of app.documents; track doc.id) {
+            <li>
+              <strong>{{ doc.type_name }}</strong
+              ><span>{{
+                doc.validation?.result === 'aprobado'
+                  ? 'Aprobado'
+                  : doc.validation?.result === 'rechazado'
+                    ? 'Requiere corrección'
+                    : 'En revisión'
+              }}</span>
+              @if (doc.validation?.comment) {
+                <p class="comment">{{ doc.validation?.comment }}</p>
+              }
+            </li>
+          }
+        </ul>
+      }
+      @if (app.state === 'documentacion_incompleta') {
+        <h2>Evidencia por corregir</h2>
+        <p>PDF, JPG, PNG o WEBP. Máximo 15 MB por archivo.</p>
+        @for (item of corrections(); track item.id) {
+          <form class="correction" (ngSubmit)="send(item)">
+            <h3>{{ item.name }}</h3>
+            <p class="comment">{{ item.comment }}</p>
+            <label [for]="'correction-' + item.id">Nueva evidencia</label>
+            <input
+              [id]="'correction-' + item.id"
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              (change)="selectFile(item, $event)"
+              [disabled]="!!sending() || loading()"
+            />
+            @if (item.file) {
+              <p>{{ item.file.name }}</p>
+            }
+            @if (item.preview) {
+              @if (item.file?.type?.startsWith('image/')) {
+                <img [src]="item.preview" [alt]="'Vista previa de ' + item.name" />
+              }
+              <a [href]="item.preview" target="_blank" rel="noopener">Ver archivo seleccionado</a>
+            }
+            @if (item.requires_expiration_date) {
+              <label [for]="'due-' + item.id">Fecha de vencimiento</label>
+              <input
+                [id]="'due-' + item.id"
+                name="dueDate"
+                type="date"
+                [(ngModel)]="item.dueDate"
+                [min]="today"
+                [disabled]="!!sending() || loading()"
+              />
+            }
+            @if (item.error) {
+              <p class="error" role="alert">{{ item.error }}</p>
+            }
+            <button type="submit" [disabled]="!!sending() || loading()">
+              {{ sending() === item.id ? 'Enviando…' : 'Reenviar documento' }}
+            </button>
+          </form>
+        } @empty {
+          <p>Las evidencias ya fueron enviadas. Actualiza el estado para consultar la revisión.</p>
+        }
+      }
+    }
+  }
+</main>
