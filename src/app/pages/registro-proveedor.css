@@ -86,8 +86,8 @@
 .registration-steps {
   display: grid;
   gap: 0.85rem;
-  margin: auto 0 0;
-  padding: 2.5rem 0 0;
+  margin: 1.75rem 0 0;
+  padding: 0;
   list-style: none;
 }
 
@@ -121,7 +121,7 @@
 }
 
 .registration-aside__help {
-  margin: 2rem 0 0;
+  margin: 1.25rem 0 0;
   color: #bed0e1;
   font-size: 0.78rem;
   line-height: 1.55;
@@ -718,5 +718,65 @@
   .documents-feedback--error {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+.branch-card {
+  min-inline-size: 0;
+  display: grid;
+  gap: 1rem;
+  margin-block: 1rem;
+  padding: 1rem;
+  border: 1px solid #dce4ec;
+  border-radius: .75rem;
+}
+
+.branch-card legend {
+  padding-inline: .5rem;
+  font-weight: 700;
+}
+
+.branch-row {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.branch-row > .form-field {
+  flex: 1 1 12rem;
+}
+
+@media (width > 56rem) {
+  .registration-shell {
+    min-height: 0;
+  }
+
+  .registration-content {
+    min-height: 0;
+    contain: size;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+}
+
+.registration-content .registration-panel h2 {
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  line-height: 1.2;
+}
+
+.registration-content .registration-panel h3 {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.registration-content .form-field {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+@media (width > 56rem) {
+  .registration-content {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
   }
 }

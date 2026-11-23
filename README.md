@@ -147,3 +147,27 @@ en la API.
 El desglose consulta la solicitud y permite obtener una URL temporal para
 previsualizar documentos, revisar documentos y enviar la resolución de la
 solicitud mediante los endpoints de administración de la API.
+
+## Locales en el registro de proveedores (FRONTENDAN-6)
+
+En `/registro-proveedor`, el paso **Locales** aparece después de **Datos del
+negocio** y antes de **Documentos requeridos**. Un proveedor independiente
+registra un local. La opción **Con sucursales** permite agregar y quitar locales,
+con un mínimo de uno.
+
+Cada local tiene una dirección capturada a mano y un punto independiente en el
+mapa de Leaflet. El punto se selecciona con un clic o con **Marcar el centro del
+mapa**. El marcador indica la ubicación seleccionada. Las coordenadas se
+conservan en el borrador de sesión y se incluyen en los datos del local.
+
+Para continuar, cada local necesita una dirección completa, un punto en el mapa,
+al menos un horario válido y una categoría activa con precio base mayor a cero.
+El catálogo se obtiene mediante `GET /api/categories`. Una categoría puede tener
+precios distintos en locales diferentes.
+
+`provider-branches.ts` valida los datos y prepara el arreglo `branches` de
+`POST /api/supplier-applications`. El envío final de la solicitud y la
+persistencia de los locales en Backend están pendientes de integración.
+
+Las pruebas unitarias cubren las validaciones de locales, el armado de
+`branches`, el límite para proveedores independientes y el avance a Documentos.

@@ -20,7 +20,10 @@
           <span>3</span> Datos del negocio
         </li>
         <li [class.registration-steps__item--active]="currentStep === 4">
-          <span>4</span> Documentos requeridos
+          <span>4</span> Locales
+        </li>
+        <li [class.registration-steps__item--active]="currentStep === 5">
+          <span>5</span> Documentos requeridos
         </li>
       </ol>
 
@@ -45,7 +48,7 @@
 
       @if (currentStep === 1) {
         <div class="registration-panel registration-panel--intro">
-          <p class="eyebrow">Paso 1 de 4</p>
+          <p class="eyebrow">Paso 1 de 5</p>
           <h2>Todo empieza con tu negocio.</h2>
           <p class="registration-panel__lead">
             Completarás una breve solicitud con los datos del encargado y la información principal
@@ -77,7 +80,7 @@
         </div>
       } @else if (currentStep === 2) {
         <form class="registration-panel" (ngSubmit)="continue()" novalidate>
-          <p class="eyebrow">Paso 2 de 4</p>
+          <p class="eyebrow">Paso 2 de 5</p>
           <h2>¿Quién estará a cargo?</h2>
           <p class="registration-panel__lead">
             Esta persona será el contacto principal y tendrá acceso a la cuenta del proveedor.
@@ -232,7 +235,7 @@
         </form>
       } @else if (currentStep === 3) {
         <form class="registration-panel" (ngSubmit)="continue()" novalidate>
-          <p class="eyebrow">Paso 3 de 4</p>
+          <p class="eyebrow">Paso 3 de 5</p>
           <h2>Háblanos de tu negocio.</h2>
           <p class="registration-panel__lead">
             Esta información se mostrará durante el proceso de verificación y será el punto de
@@ -338,12 +341,181 @@
             </button>
           </div>
         </form>
-      } @else {
+      } @else if (currentStep === 4) {
+        <form class="registration-panel" (ngSubmit)="continue()" novalidate>
+          <p class="eyebrow">Paso 4 de 5</p>
+          <h2>Registra tus locales</h2>
+
+          @if (categoriesLoading) {
+            <p role="status">Cargando categorías…</p>
+          } @else if (categoriesError) {
+            <p role="alert">{{ categoriesError }}</p>
+            <button type="button" class="secondary-button" (click)="loadCategories()">
+              Reintentar
+            </button>
+          } @else if (!categories.length) {
+            <p role="status">Aún no hay categorías activas en el catálogo.</p>
+            <button type="button" class="secondary-button" (click)="loadCategories()">
+              Actualizar catálogo
+            </button>
+          }
+
+          @if (errors['branches']) {
+            <p role="alert">{{ errors['branches'] }}</p>
+          }
+
+          @for (branch of branches; track branch; let i = $index) {
+            <fieldset class="branch-card">
+              <legend>Local {{ i + 1 }}</legend>
+              @if (branches.length > 1) {
+                <button type="button" class="text-button" (click)="removeBranch(i)">
+                  Quitar local
+                </button>
+              }
+
+              <label class="form-field">
+                Nombre del local
+                <input
+                  [name]="'branch-name-' + i"
+                  [(ngModel)]="branch.name"
+                  (ngModelChange)="saveDraft()"
+                  required
+                />
+              </label>
+
+              <div class="form-grid form-grid--two-columns">
+                @for (field of addressFields; track field.key) {
+                  <label class="form-field">
+                    {{ field.label }}
+                    <input
+                      [name]="'address-' + i + '-' + field.key"
+                      [(ngModel)]="branch.address[field.key]"
+                      (ngModelChange)="saveDraft()"
+                      required
+                    />
+                  </label>
+                }
+              </div>
+
+              <app-branch-map
+                [location]="branch.location"
+                (locationChange)="branch.location = $event; saveDraft()"
+              />
+
+              <h3>Horarios de atención</h3>
+              @for (day of branch.schedules; track day.day_of_week) {
+                <div class="branch-row">
+                  <label>
+                    <input
+                      type="checkbox"
+                      [name]="'day-' + i + '-' + day.day_of_week"
+                      [(ngModel)]="day.enabled"
+                      (ngModelChange)="saveDraft()"
+                    />
+                    {{ day.label }}
+                  </label>
+                  @if (day.enabled) {
+                    <label>
+                      Apertura
+                      <input
+                        type="time"
+                        [name]="'open-' + i + '-' + day.day_of_week"
+                        [(ngModel)]="day.open_time"
+                        (ngModelChange)="saveDraft()"
+                      />
+                    </label>
+                    <label>
+                      Cierre
+                      <input
+                        type="time"
+                        [name]="'close-' + i + '-' + day.day_of_week"
+                        [(ngModel)]="day.close_time"
+                        (ngModelChange)="saveDraft()"
+                      />
+                    </label>
+                  }
+                </div>
+              }
+
+              <h3>Categorías y precios base</h3>
+              @for (item of branch.categories; track item; let j = $index) {
+                <div class="branch-row">
+                  <label class="form-field">
+                    Categoría
+                    <select
+                      [name]="'category-' + i + '-' + j"
+                      [(ngModel)]="item.category_id"
+                      (ngModelChange)="saveDraft()"
+                    >
+                      <option value="">Seleccionar categoría</option>
+                      @for (category of categories; track category.id) {
+                        <option [value]="category.id">{{ category.name }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="form-field">
+                    Precio base (MXN)
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      [name]="'price-' + i + '-' + j"
+                      [(ngModel)]="item.base_price"
+                      (ngModelChange)="saveDraft()"
+                    />
+                  </label>
+                  @if (branch.categories.length > 1) {
+                    <button
+                      type="button"
+                      class="text-button"
+                      (click)="branch.categories.splice(j, 1); saveDraft()"
+                    >
+                      Quitar categoría
+                    </button>
+                  }
+                </div>
+              }
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="branch.categories.push({ category_id: '', base_price: null }); saveDraft()"
+              >
+                Agregar categoría
+              </button>
+
+              @if (branchErrors[i]?.length) {
+                <ul role="alert">
+                  @for (error of branchErrors[i]; track error) {
+                    <li>{{ error }}</li>
+                  }
+                </ul>
+              }
+            </fieldset>
+          }
+
+          @if (canAddBranch) {
+            <button type="button" class="secondary-button" (click)="addBranch()">
+              Agregar local
+            </button>
+          }
+
+          <div class="form-actions">
+            <button type="button" class="secondary-button" (click)="back()">Anterior</button>
+            <button
+              type="submit"
+              class="primary-button"
+              [disabled]="categoriesLoading || !!categoriesError || !categories.length"
+            >
+              Continuar a documentos
+            </button>
+          </div>
+        </form>
+      } @else if (currentStep === 5) {
         <section
           class="registration-panel registration-panel--documents"
           aria-labelledby="documents-title"
         >
-          <p class="eyebrow">Paso 4 de 4</p>
+          <p class="eyebrow">Paso 5 de 5</p>
           <h2 id="documents-title">Documentos requeridos</h2>
           <p class="registration-panel__lead">
             Estos documentos corresponden a un proveedor

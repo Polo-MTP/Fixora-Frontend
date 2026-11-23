@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { ProviderRegistrationApi } from '../registration/provider-registration-api';
 import { ProviderRegistration } from './registro-proveedor';
@@ -31,6 +31,7 @@ describe('ProviderRegistration', () => {
           provide: ProviderRegistrationApi,
           useValue: {
             getDocumentTypes: () => of({ data: documentTypes }),
+            getCategories: () => of({ data: [{ id: '1', name: 'Plomería' }] }),
           },
         },
       ],
@@ -66,6 +67,29 @@ describe('ProviderRegistration', () => {
     component.continue();
 
     expect(component.currentStep).toBe(4);
+
+    // Un local incompleto impide avanzar.
+    component.continue();
+    expect(component.currentStep).toBe(4);
+    expect(component.branchErrors[0].length).toBeGreaterThan(0);
+
+    const branch = component.branches[0];
+    branch.name = 'Local Centro';
+    branch.address = {
+      street: 'Calle de prueba',
+      num_ext: '12-B',
+      colony: 'Centro',
+      municipality: 'Torreón',
+      state: 'Coahuila',
+      postal_code: '27000',
+    };
+    branch.location = { latitude: 25.5428, longitude: -103.4068 };
+    branch.schedules[1].enabled = true;
+    branch.categories = [{ category_id: '1', base_price: 350 }];
+
+    component.continue();
+
+    expect(component.currentStep).toBe(5);
     expect(component.documents).toHaveLength(1);
   });
 
@@ -80,6 +104,41 @@ describe('ProviderRegistration', () => {
 
     expect(document.status).toBe('ready');
     expect(document.fileName).toBe('identificacion.pdf');
+  });
+
+  it('renders documents after an asynchronous response without manual change detection', async () => {
+    const response = new Subject<{ data: typeof documentTypes }>();
+    const api = TestBed.inject(ProviderRegistrationApi);
+    vi.spyOn(api, 'getDocumentTypes').mockReturnValue(response);
+    component.business.supplierType = 'independiente';
+    component.currentStep = 4;
+    component.retryDocumentTypes();
+    fixture.detectChanges();
+
+    response.next({ data: documentTypes });
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.textContent).toContain('Identificación oficial');
+    expect(fixture.nativeElement.textContent).not.toContain('Cargando documentos');
+  });
+
+  it('renders an asynchronous error and allows retrying', async () => {
+    const response = new Subject<{ data: typeof documentTypes }>();
+    const api = TestBed.inject(ProviderRegistrationApi);
+    const request = vi.spyOn(api, 'getDocumentTypes').mockReturnValue(response);
+    component.business.supplierType = 'empresa';
+    component.currentStep = 4;
+    component.retryDocumentTypes();
+    fixture.detectChanges();
+    response.error(new Error('Sin conexión'));
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.textContent).toContain('Reintentar');
+    expect(component.documentsLoading).toBe(false);
+    request.mockReturnValue(of({ data: documentTypes }));
+    component.retryDocumentTypes();
+    await fixture.whenStable();
+    expect(fixture.nativeElement.textContent).toContain('Identificación oficial');
   });
 
   it('rejects a file that is not an allowed document format', () => {
@@ -124,5 +183,32 @@ describe('ProviderRegistration', () => {
     expect(saved.manager?.email).toBe('maria@example.com');
     expect(saved.manager?.password).toBeUndefined();
     expect(saved.manager?.passwordConfirmation).toBeUndefined();
+  });
+
+  it('permite agregar y quitar locales sin mezclar los datos de una empresa', () => {
+    component.business.supplierType = 'empresa';
+    component.branches[0].name = 'Local Centro';
+
+    component.addBranch();
+    expect(component.branches).toHaveLength(2);
+
+    component.branches[1].name = 'Local Norte';
+    component.branches[1].location = { latitude: 25.6, longitude: -103.4 };
+
+    expect(component.branches[0].name).toBe('Local Centro');
+    expect(component.branches[0].location).toBeNull();
+
+    component.removeBranch(1);
+    expect(component.branches).toHaveLength(1);
+    expect(component.branches[0].name).toBe('Local Centro');
+  });
+
+  it('mantiene un solo local para un proveedor independiente', () => {
+    component.business.supplierType = 'independiente';
+
+    component.addBranch();
+    component.removeBranch(0);
+
+    expect(component.branches).toHaveLength(1);
   });
 });
