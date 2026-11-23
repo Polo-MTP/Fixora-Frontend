@@ -20,6 +20,12 @@ export const routes: Routes = [
   },
 
   {
+    path: 'administrador/categorias',
+    canActivate: [roleGuard],
+    data: { roles: ['administrador'] },
+    loadComponent: () => import('./pages/admin/categories').then(m => m.Categories),
+  },
+  {
     path: 'administrador/verificaciones/:id',
     canActivate: [roleGuard],
     data: { roles: ['administrador'] },

@@ -37,7 +37,7 @@ import { SessionService } from '../auth/session.service';
           <span class="nav-disabled"><span aria-hidden="true">♧</span> Clientes</span>
           <span class="nav-disabled"><span aria-hidden="true">$</span> Pagos y comisiones</span>
           <span class="nav-disabled"><span aria-hidden="true">◇</span> Adeudos</span>
-          <span class="nav-disabled"><span aria-hidden="true">⌑</span> Categorías</span>
+          <a routerLink="/administrador/categorias" routerLinkActive="active"><span aria-hidden="true">⌑</span> Categorías</a>
           <span class="nav-disabled"><span aria-hidden="true">◉</span> Patrocinados</span>
           <span class="nav-disabled"><span aria-hidden="true">♙</span> Equipo</span>
           <span class="nav-disabled"><span aria-hidden="true">⚙</span> Configuración</span>
