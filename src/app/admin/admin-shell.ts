@@ -36,9 +36,9 @@ import { SessionService } from '../auth/session.service';
           <a routerLink="/administrador/usuarios" routerLinkActive="active"><span aria-hidden="true">♙</span> Usuarios</a>
           <span class="nav-disabled"><span aria-hidden="true">$</span> Pagos y comisiones</span>
           <span class="nav-disabled"><span aria-hidden="true">◇</span> Adeudos</span>
-          <span class="nav-disabled"><span aria-hidden="true">⌑</span> Categorías</span>
+          <a routerLink="/administrador/categorias" routerLinkActive="active"><span aria-hidden="true">⌑</span> Categorías</a>
           <span class="nav-disabled"><span aria-hidden="true">◉</span> Patrocinados</span>
-          <span class="nav-disabled"><span aria-hidden="true">♙</span> Equipo</span>
+          <a routerLink="/administrador/equipo" routerLinkActive="active"><span aria-hidden="true">♙</span> Equipo</a>
           <span class="nav-disabled"><span aria-hidden="true">⚙</span> Configuración</span>
           <span class="nav-disabled"><span aria-hidden="true">◷</span> Bitácora</span>
         </nav>
