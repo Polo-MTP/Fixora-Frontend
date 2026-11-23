@@ -1,0 +1,168 @@
+<section class="hero" aria-labelledby="hero-title">
+    <div class="hero__inner">
+        <div class="hero__copy">
+            <p class="eyebrow eyebrow--light">Servicios confiables, cerca de ti</p>
+
+            <h1 id="hero-title">
+                Ayuda de confianza,<br />
+                <span>a un toque.</span>
+            </h1>
+
+            <p class="hero__description">
+                Encuentra técnicos verificados para resolver lo que necesitas en tu hogar,
+                oficina o negocio.
+            </p>
+
+            <div class="hero__actions">
+                <a class="button button--primary" routerLink="/registro-proveedor">
+                    Quiero ser proveedor
+                    <span aria-hidden="true">→</span>
+                </a>
+
+                <a class="button button--secondary" href="#servicios">
+                    Explorar servicios
+                </a>
+            </div>
+
+            <p class="hero__trust">
+                <span class="trust-icon" aria-hidden="true">✓</span>
+                Técnicos verificados cerca de ti
+            </p>
+        </div>
+
+        <div class="hero__visual" aria-label="Mapa ilustrado de proveedores cercanos">
+            <div class="map-card">
+                <div class="map-card__map" aria-hidden="true">
+                    <span class="map-pin map-pin--one"></span>
+                    <span class="map-pin map-pin--two"></span>
+                    <span class="map-pin map-pin--three"></span>
+                    <span class="map-pin map-pin--main"><span></span></span>
+                </div>
+
+                <div class="map-chip map-chip--nearby">
+                    <span class="map-chip__icon" aria-hidden="true">⌖</span>
+                    <span>
+                        <strong>Técnicos cerca de ti</strong>
+                        <small>Servicios en tu zona</small>
+                    </span>
+                </div>
+
+                <div class="map-chip map-chip--schedule">
+                    <span class="map-chip__icon" aria-hidden="true">▦</span>
+                    <span>
+                        <strong>Agenda fácilmente</strong>
+                        <small>En el horario que necesitas</small>
+                    </span>
+                </div>
+
+                <div class="provider-card">
+                    <span class="provider-card__icon" aria-hidden="true">⌕</span>
+                    <span class="provider-card__info">
+                        <strong>Plomería</strong>
+                        <small>Proveedor disponible</small>
+                    </span>
+                    <span class="provider-card__verified">✓ Verificado</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="services section-wrap" id="servicios" aria-labelledby="services-title">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Soluciones para tu día a día</p>
+            <h2 id="services-title">¿Qué necesitas arreglar?</h2>
+        </div>
+        <p>Encuentra ayuda para los servicios que necesitas en casa, oficina o negocio.</p>
+    </div>
+
+    <div class="services__grid">
+        <article class="service-card">
+            <span class="service-card__icon" aria-hidden="true">P</span>
+            <h3>Plomería</h3>
+            <span class="service-card__arrow" aria-hidden="true">→</span>
+        </article>
+
+        <article class="service-card">
+            <span class="service-card__icon service-card__icon--orange" aria-hidden="true">E</span>
+            <h3>Electricidad</h3>
+            <span class="service-card__arrow" aria-hidden="true">→</span>
+        </article>
+
+        <article class="service-card">
+            <span class="service-card__icon service-card__icon--blue" aria-hidden="true">C</span>
+            <h3>Cerrajería</h3>
+            <span class="service-card__arrow" aria-hidden="true">→</span>
+        </article>
+
+        <article class="service-card">
+            <span class="service-card__icon service-card__icon--green" aria-hidden="true">M</span>
+            <h3>Mecánica</h3>
+            <span class="service-card__arrow" aria-hidden="true">→</span>
+        </article>
+    </div>
+</section>
+
+<section class="how-it-works" id="como-funciona" aria-labelledby="steps-title">
+    <div class="section-wrap">
+        <div class="section-heading section-heading--center">
+            <p class="eyebrow">Simple y cercano</p>
+            <h2 id="steps-title">Resuelve lo que necesitas en tres pasos</h2>
+        </div>
+
+        <div class="steps__grid">
+            <article class="step-card">
+                <span class="step-card__number">1</span>
+                <div>
+                    <h3>Cuéntanos qué necesitas</h3>
+                    <p>Elige el servicio y tu ubicación.</p>
+                </div>
+            </article>
+
+            <article class="step-card">
+                <span class="step-card__number">2</span>
+                <div>
+                    <h3>Conecta con un técnico</h3>
+                    <p>Recibe opciones de técnicos verificados cerca de ti.</p>
+                </div>
+            </article>
+
+            <article class="step-card">
+                <span class="step-card__number">3</span>
+                <div>
+                    <h3>Agenda y resuelve</h3>
+                    <p>Coordina el servicio y listo.</p>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="provider-cta section-wrap" aria-labelledby="provider-title">
+    <div class="provider-cta__copy">
+        <p class="eyebrow eyebrow--light">Para profesionales de servicio</p>
+        <h2 id="provider-title">Haz que más personas encuentren tu trabajo.</h2>
+        <p>
+            Únete a Fixora y ofrece tus servicios a clientes de tu zona, con un perfil verificado.
+        </p>
+    </div>
+
+    <a class="button button--primary" routerLink="/registro-proveedor">
+        Quiero ser proveedor
+        <span aria-hidden="true">→</span>
+    </a>
+</section>
+
+<footer class="site-footer section-wrap">
+    <a class="site-footer__brand" routerLink="/" aria-label="Fixora, inicio">
+        Fix<span>o</span>ra
+    </a>
+
+    <nav aria-label="Enlaces del pie de página">
+        <a href="#servicios">Servicios</a>
+        <a href="#como-funciona">Cómo funciona</a>
+    </nav>
+
+    <span class="site-footer__copyright">© Fixora</span>
+</footer>

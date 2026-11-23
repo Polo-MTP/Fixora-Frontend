@@ -1,0 +1,226 @@
+:host {
+    display: block;
+}
+
+.login-page {
+    display: grid;
+    min-height: calc(100vh - 4.75rem);
+    place-items: center;
+    padding: clamp(1.25rem, 4vw, 3rem);
+    background:
+        radial-gradient(circle at 80% 15%, rgb(255 92 47 / 9%), transparent 22rem),
+        #f3f6fa;
+}
+
+.login-card {
+    display: grid;
+    grid-template-columns: minmax(16rem, 0.9fr) minmax(20rem, 1.1fr);
+    width: min(100%, 58rem);
+    overflow: hidden;
+    border: 1px solid #e5eaf0;
+    border-radius: 1.25rem;
+    background: #fff;
+    box-shadow: 0 1.5rem 4rem rgb(20 45 75 / 12%);
+}
+
+.login-card__intro {
+    display: flex;
+    min-height: 32rem;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(2rem, 5vw, 4rem);
+    color: #fff;
+    background:
+        radial-gradient(circle at 75% 25%, rgb(255 92 47 / 22%), transparent 12rem),
+        #1d3b60;
+}
+
+.login-card__eyebrow {
+    margin: 0 0 0.75rem;
+    color: #d7e2ef;
+    font-size: 0.78rem;
+    font-weight: 750;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.login-card__eyebrow--orange {
+    color: #e94c25;
+}
+
+.login-card__intro h1,
+.login-card__form h2 {
+    margin: 0;
+    line-height: 1.1;
+}
+
+.login-card__intro h1 {
+    max-width: 12ch;
+    font-size: clamp(2.25rem, 4vw, 3.4rem);
+}
+
+.login-card__intro p {
+    max-width: 28rem;
+    margin: 1rem 0 0;
+    color: #d7e2ef;
+    line-height: 1.7;
+}
+
+.login-card__mark {
+    margin-top: 3rem;
+    color: #ffb28f;
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+}
+
+.login-card__form {
+    align-self: center;
+    padding: clamp(2rem, 5vw, 4rem);
+}
+
+.login-card__form h2 {
+    color: #172b45;
+    font-size: clamp(1.8rem, 3vw, 2.3rem);
+}
+
+.login-card__description {
+    margin: 0.75rem 0 2rem;
+    color: #66758a;
+    line-height: 1.6;
+}
+
+.form-field {
+    display: grid;
+    gap: 0.55rem;
+    margin-bottom: 1.25rem;
+    color: #263b55;
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+.form-field input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid #d7e0e9;
+    border-radius: 0.65rem;
+    color: #172b45;
+    background: #fff;
+    font: inherit;
+}
+
+.form-field input:focus-visible {
+    border-color: #1d3b60;
+    outline: 3px solid rgb(29 59 96 / 14%);
+}
+
+.password-input {
+    position: relative;
+}
+
+.password-input input {
+    padding-right: 5.5rem;
+}
+
+.password-input__toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    padding: 0.35rem;
+    transform: translateY(-50%);
+    border: 0;
+    color: #1d3b60;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.form-field__error {
+    color: #b42318;
+    font-weight: 500;
+}
+
+.form-message {
+    margin: 0 0 1rem;
+    padding: 0.8rem 0.9rem;
+    border-radius: 0.65rem;
+    color: #1d3b60;
+    background: #edf3f8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.form-message--error {
+    color: #9e2a20;
+    background: #fff0ed;
+}
+
+.login-button {
+    display: flex;
+    width: 100%;
+    min-height: 3.2rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+    border: 0;
+    border-radius: 0.7rem;
+    color: #fff;
+    background: #ff5c2f;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 750;
+    transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.login-button:hover:not(:disabled) {
+    background: #e94c25;
+    transform: translateY(-1px);
+}
+
+.login-button:focus-visible,
+.password-input__toggle:focus-visible {
+    outline: 3px solid rgb(255 92 47 / 35%);
+    outline-offset: 3px;
+}
+
+.login-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.login-card__help {
+    margin: 1.5rem 0 0;
+    color: #66758a;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.login-card__help a {
+    color: #1d3b60;
+    font-weight: 700;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+}
+
+@media (max-width: 46rem) {
+    .login-card {
+        grid-template-columns: 1fr;
+    }
+
+    .login-card__intro {
+        min-height: auto;
+        padding: 2rem;
+    }
+
+    .login-card__intro h1 {
+        font-size: 2rem;
+    }
+
+    .login-card__mark {
+        margin-top: 1.5rem;
+    }
+}
