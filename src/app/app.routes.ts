@@ -10,6 +10,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/landing').then((m) => m.Landing),
   },
   {
+    path: 'administrador/usuarios',
+    canActivate: [roleGuard],
+    data: { roles: ['administrador'] },
+    loadComponent: () => import('./pages/admin/users').then(m => m.Users),
+  },
+  {
     path: 'login',
     loadComponent: () => import('./pages/login').then((m) => m.Login),
   },
