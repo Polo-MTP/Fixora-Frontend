@@ -1,0 +1,152 @@
+<app-admin-shell>
+  <p class="eyebrow">Catálogo</p>
+  <h1>Categorías de servicio</h1>
+  <p>Crea categorías, asigna su ícono y ordena los accesos de la app.</p>
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="success" role="status">{{ message() }}</p>
+  }
+  <section class="card" aria-labelledby="category-form-title">
+    <h2 id="category-form-title">{{ editing() ? 'Editar categoría' : 'Nueva categoría' }}</h2>
+    <form (ngSubmit)="save()">
+      <fieldset [disabled]="saving() || loading()">
+        <div class="grid">
+          <label
+            >Nombre<input
+              name="name"
+              [(ngModel)]="draft.name"
+              required
+              minlength="2"
+              maxlength="150"
+          /></label>
+          <label
+            >Slug<input
+              name="slug"
+              [(ngModel)]="draft.slug"
+              maxlength="150"
+              placeholder="Ej. plomeria"
+            /><small>Vacío: se genera al crear o se conserva al editar.</small></label
+          >
+          <label
+            >Clave del ícono<input
+              name="icon"
+              [(ngModel)]="draft.icon_key"
+              maxlength="500"
+              placeholder="icons/plomeria.svg"
+            /><small>Usa la clave del recurso disponible para la app.</small></label
+          >
+          <label
+            >Orden<input
+              name="order"
+              type="number"
+              [(ngModel)]="draft.sort_order"
+              required
+              min="0"
+              step="1"
+          /></label>
+          <label class="inline"
+            ><input name="active" type="checkbox" [(ngModel)]="draft.active" />Activa</label
+          >
+        </div>
+        <div class="actions">
+          <button type="submit">{{ saving() ? 'Guardando…' : 'Guardar categoría' }}</button>
+          @if (editing()) {
+            <button type="button" class="secondary" (click)="reset()">Cancelar edición</button>
+          }
+        </div>
+      </fieldset>
+    </form>
+  </section>
+  <section class="card" aria-label="Listado de categorías">
+    <div class="filters">
+      <label
+        >Buscar<input
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          type="search"
+          placeholder="Nombre o slug"
+      /></label>
+      <label
+        >Estado<select [ngModel]="state()" (ngModelChange)="state.set($event)">
+          <option value="">Todas</option>
+          <option value="true">Activas</option>
+          <option value="false">Inactivas</option>
+        </select></label
+      >
+      <button type="button" class="secondary" (click)="load()" [disabled]="loading() || saving()">
+        Actualizar
+      </button>
+    </div>
+    @if (loading()) {
+      <p role="status">Cargando categorías…</p>
+    }
+    @if (deactivate(); as row) {
+      <div class="notice">
+        <p>¿Desactivar «{{ row.name }}»? Dejará de aparecer en el catálogo público.</p>
+        <button type="button" (click)="toggle(row)" [disabled]="saving()">
+          Confirmar desactivación
+        </button>
+        <button
+          type="button"
+          class="secondary"
+          (click)="deactivate.set(null)"
+          [disabled]="saving()"
+        >
+          Cancelar
+        </button>
+      </div>
+    }
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Orden</th>
+            <th>Categoría</th>
+            <th>Ícono</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of visible(); track row.id) {
+            <tr>
+              <td>{{ row.sort_order }}</td>
+              <td>
+                <strong>{{ row.name }}</strong
+                ><br /><small>{{ row.slug }}</small>
+              </td>
+              <td>{{ row.icon_key || 'Sin ícono' }}</td>
+              <td>{{ row.active ? 'Activa' : 'Inactiva' }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="secondary"
+                  (click)="edit(row)"
+                  [disabled]="saving() || loading()"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="secondary"
+                  (click)="row.active ? deactivate.set(row) : toggle(row)"
+                  [disabled]="saving() || loading()"
+                >
+                  {{ row.active ? 'Desactivar' : 'Activar' }}
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            @if (!loading()) {
+              <tr>
+                <td colspan="5">No hay categorías que coincidan con los filtros.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</app-admin-shell>
