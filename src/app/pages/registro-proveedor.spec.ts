@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { ProviderRegistrationApi } from '../registration/provider-registration-api';
 import { ProviderRegistration } from './registro-proveedor';
@@ -80,6 +80,41 @@ describe('ProviderRegistration', () => {
 
     expect(document.status).toBe('ready');
     expect(document.fileName).toBe('identificacion.pdf');
+  });
+
+  it('renders documents after an asynchronous response without manual change detection', async () => {
+    const response = new Subject<{ data: typeof documentTypes }>();
+    const api = TestBed.inject(ProviderRegistrationApi);
+    vi.spyOn(api, 'getDocumentTypes').mockReturnValue(response);
+    component.business.supplierType = 'independiente';
+    component.currentStep = 4;
+    component.retryDocumentTypes();
+    fixture.detectChanges();
+
+    response.next({ data: documentTypes });
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.textContent).toContain('Identificación oficial');
+    expect(fixture.nativeElement.textContent).not.toContain('Cargando documentos');
+  });
+
+  it('renders an asynchronous error and allows retrying', async () => {
+    const response = new Subject<{ data: typeof documentTypes }>();
+    const api = TestBed.inject(ProviderRegistrationApi);
+    const request = vi.spyOn(api, 'getDocumentTypes').mockReturnValue(response);
+    component.business.supplierType = 'empresa';
+    component.currentStep = 4;
+    component.retryDocumentTypes();
+    fixture.detectChanges();
+    response.error(new Error('Sin conexión'));
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.textContent).toContain('Reintentar');
+    expect(component.documentsLoading).toBe(false);
+    request.mockReturnValue(of({ data: documentTypes }));
+    component.retryDocumentTypes();
+    await fixture.whenStable();
+    expect(fixture.nativeElement.textContent).toContain('Identificación oficial');
   });
 
   it('rejects a file that is not an allowed document format', () => {
