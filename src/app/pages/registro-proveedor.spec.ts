@@ -31,6 +31,7 @@ describe('ProviderRegistration', () => {
           provide: ProviderRegistrationApi,
           useValue: {
             getDocumentTypes: () => of({ data: documentTypes }),
+            getCategories: () => of({ data: [{ id: '1', name: 'Plomería' }] }),
           },
         },
       ],
@@ -66,6 +67,29 @@ describe('ProviderRegistration', () => {
     component.continue();
 
     expect(component.currentStep).toBe(4);
+
+    // Un local incompleto impide avanzar.
+    component.continue();
+    expect(component.currentStep).toBe(4);
+    expect(component.branchErrors[0].length).toBeGreaterThan(0);
+
+    const branch = component.branches[0];
+    branch.name = 'Local Centro';
+    branch.address = {
+      street: 'Calle de prueba',
+      num_ext: '12-B',
+      colony: 'Centro',
+      municipality: 'Torreón',
+      state: 'Coahuila',
+      postal_code: '27000',
+    };
+    branch.location = { latitude: 25.5428, longitude: -103.4068 };
+    branch.schedules[1].enabled = true;
+    branch.categories = [{ category_id: '1', base_price: 350 }];
+
+    component.continue();
+
+    expect(component.currentStep).toBe(5);
     expect(component.documents).toHaveLength(1);
   });
 
@@ -159,5 +183,32 @@ describe('ProviderRegistration', () => {
     expect(saved.manager?.email).toBe('maria@example.com');
     expect(saved.manager?.password).toBeUndefined();
     expect(saved.manager?.passwordConfirmation).toBeUndefined();
+  });
+
+  it('permite agregar y quitar locales sin mezclar los datos de una empresa', () => {
+    component.business.supplierType = 'empresa';
+    component.branches[0].name = 'Local Centro';
+
+    component.addBranch();
+    expect(component.branches).toHaveLength(2);
+
+    component.branches[1].name = 'Local Norte';
+    component.branches[1].location = { latitude: 25.6, longitude: -103.4 };
+
+    expect(component.branches[0].name).toBe('Local Centro');
+    expect(component.branches[0].location).toBeNull();
+
+    component.removeBranch(1);
+    expect(component.branches).toHaveLength(1);
+    expect(component.branches[0].name).toBe('Local Centro');
+  });
+
+  it('mantiene un solo local para un proveedor independiente', () => {
+    component.business.supplierType = 'independiente';
+
+    component.addBranch();
+    component.removeBranch(0);
+
+    expect(component.branches).toHaveLength(1);
   });
 });

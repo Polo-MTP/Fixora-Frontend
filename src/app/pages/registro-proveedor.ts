@@ -7,9 +7,18 @@ import {
   ProviderRegistrationApi,
   type ProviderDocumentType,
   type SupplierType,
+  type RegistrationCategory,
 } from '../registration/provider-registration-api';
+import { BranchMap } from '../registration/branch-map';
+import {
+  ADDRESS_FIELDS,
+  createBranchDraft,
+  toBranchInput,
+  validateBranch,
+  type BranchDraft,
+} from '../registration/provider-branches';
 
-type RegistrationStep = 1 | 2 | 3 | 4;
+type RegistrationStep = 1 | 2 | 3 | 4 | 5;
 type DocumentStatus = 'pending' | 'ready' | 'error';
 
 interface ManagerDraft {
@@ -33,6 +42,7 @@ interface RegistrationDraft {
   step: RegistrationStep;
   manager: Omit<ManagerDraft, 'password' | 'passwordConfirmation'>;
   business: BusinessDraft;
+  branches?: BranchDraft[];
 }
 
 interface RegistrationDocument extends ProviderDocumentType {
@@ -52,7 +62,7 @@ const MAX_FILE_SIZE = 15 * 1024 * 1024;
 
 @Component({
   selector: 'app-provider-registration',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, BranchMap],
   templateUrl: './registro-proveedor.html',
   styleUrl: './registro-proveedor.css',
 })
@@ -74,6 +84,55 @@ export class ProviderRegistration implements OnInit, OnDestroy {
   documentsError = '';
   errors: Record<string, string> = {};
 
+  // New branch related properties
+  readonly addressFields = ADDRESS_FIELDS;
+  branches: BranchDraft[] = [createBranchDraft()];
+  branchErrors: string[][] = [];
+
+  categories: RegistrationCategory[] = [];
+  categoriesLoading = false;
+  categoriesError = '';
+
+  get canAddBranch(): boolean {
+    return this.business.supplierType === 'empresa';
+  }
+
+  addBranch(): void {
+    if (!this.canAddBranch) return;
+    this.branches.push(createBranchDraft());
+    this.saveDraft();
+  }
+
+  removeBranch(index: number): void {
+    if (this.branches.length <= 1) return;
+    this.branches.splice(index, 1);
+    this.branchErrors = [];
+    this.saveDraft();
+  }
+
+  loadCategories(): void {
+    if (this.categoriesLoading) return;
+    this.categoriesLoading = true;
+    this.categoriesError = '';
+
+    this.registrationApi.getCategories().pipe(take(1)).subscribe({
+      next: ({ data }) => {
+        this.categories = data.map(({ id, name }) => ({ id: String(id), name }));
+        this.categoriesLoading = false;
+      },
+      error: () => {
+        this.categoriesLoading = false;
+        this.categoriesError = 'No pudimos cargar el catálogo de categorías.';
+      },
+    });
+  }
+
+  buildBranchesInput(): ReturnType<typeof toBranchInput>[] {
+    return this.branches.map(toBranchInput);
+  }
+
+
+
   ngOnInit(): void {
     this.restoreDraft();
   }
@@ -92,7 +151,6 @@ export class ProviderRegistration implements OnInit, OnDestroy {
   continue(): void {
     if (this.currentStep === 2) {
       this.errors = this.validateManager();
-
       if (Object.keys(this.errors).length > 0) return;
 
       this.currentStep = 3;
@@ -102,18 +160,39 @@ export class ProviderRegistration implements OnInit, OnDestroy {
 
     if (this.currentStep === 3) {
       this.errors = this.validateBusiness();
-
       if (Object.keys(this.errors).length > 0) return;
 
       this.currentStep = 4;
+      this.saveDraft();
+      this.loadCategories();
+      return;
+    }
+
+    if (this.currentStep === 4) {
+      if (this.categoriesLoading || this.categoriesError) return;
+
+      if (!this.canAddBranch && this.branches.length > 1) {
+        this.errors = { branches: 'Deja un solo local para continuar como independiente.' };
+        return;
+      }
+
+      this.errors = {};
+      const availableIds = new Set(this.categories.map(({ id }) => id));
+      this.branchErrors = this.branches.map((branch) => validateBranch(branch, availableIds));
+      if (this.branchErrors.some((errors) => errors.length > 0)) return;
+
+      this.currentStep = 5;
       this.saveDraft();
       this.loadDocumentTypes();
     }
   }
 
   back(): void {
-    if (this.currentStep === 4) {
+    if (this.currentStep === 5) {
+      this.currentStep = 4;
+    } else if (this.currentStep === 4) {
       this.currentStep = 3;
+      if (this.categories.length === 0) this.loadCategories();
     } else if (this.currentStep === 3) {
       this.currentStep = 2;
     } else if (this.currentStep === 2) {
@@ -135,6 +214,7 @@ export class ProviderRegistration implements OnInit, OnDestroy {
         email: this.manager.email,
       },
       business: { ...this.business },
+      branches: this.branches,
     };
 
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -147,6 +227,8 @@ export class ProviderRegistration implements OnInit, OnDestroy {
     this.showPasswordConfirmation = false;
     this.manager = this.createManagerDraft();
     this.business = this.createBusinessDraft();
+    this.branches = [createBranchDraft()];
+    this.branchErrors = [];
     this.clearDocuments();
     this.errors = {};
     sessionStorage.removeItem(DRAFT_KEY);
@@ -182,9 +264,16 @@ export class ProviderRegistration implements OnInit, OnDestroy {
       };
       this.restoredDraft = true;
 
-      if (this.currentStep === 4) {
-        this.loadDocumentTypes();
+      if (Array.isArray(draft.branches) && draft.branches.length > 0) {
+        this.branches = draft.branches;
       }
+
+      if (!draft.branches && this.currentStep === 5) {
+        this.currentStep = 4;
+      }
+
+      if (this.currentStep === 4) this.loadCategories();
+      if (this.currentStep === 5) this.loadDocumentTypes();
     } catch {
       sessionStorage.removeItem(DRAFT_KEY);
     }
@@ -294,7 +383,7 @@ export class ProviderRegistration implements OnInit, OnDestroy {
   }
 
   private isRegistrationStep(value: unknown): value is RegistrationStep {
-    return value === 1 || value === 2 || value === 3 || value === 4;
+    return value === 1 || value === 2 || value === 3 || value === 4 || value === 5;
   }
 
   private loadDocumentTypes(): void {
