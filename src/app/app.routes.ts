@@ -44,6 +44,13 @@ export const routes: Routes = [
       import('./pages/admin/admin-dashboard').then((m) => m.AdminDashboard),
   },
 
+  {
+    path: 'administrador/equipo',
+    canActivate: [roleGuard],
+    data: { roles: ['administrador'] },
+    loadComponent: () => import('./pages/admin/staff-create').then(m => m.StaffCreate),
+  },
+
   ...(['cliente', 'proveedor', 'gerente', 'empleado', 'soporte'] as const).map((role) => ({
     path: role,
     data: { roles: [role] },
