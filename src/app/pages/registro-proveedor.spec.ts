@@ -90,6 +90,11 @@ describe('ProviderRegistration', () => {
     component.continue();
 
     expect(component.currentStep).toBe(5);
+
+    // El paso de empleados es opcional.
+    component.continue();
+
+    expect(component.currentStep).toBe(6);
     expect(component.documents).toHaveLength(1);
   });
 
@@ -111,7 +116,7 @@ describe('ProviderRegistration', () => {
     const api = TestBed.inject(ProviderRegistrationApi);
     vi.spyOn(api, 'getDocumentTypes').mockReturnValue(response);
     component.business.supplierType = 'independiente';
-    component.currentStep = 4;
+    component.currentStep = 6;
     component.retryDocumentTypes();
     fixture.detectChanges();
 
@@ -127,7 +132,7 @@ describe('ProviderRegistration', () => {
     const api = TestBed.inject(ProviderRegistrationApi);
     const request = vi.spyOn(api, 'getDocumentTypes').mockReturnValue(response);
     component.business.supplierType = 'empresa';
-    component.currentStep = 4;
+    component.currentStep = 6;
     component.retryDocumentTypes();
     fixture.detectChanges();
     response.error(new Error('Sin conexión'));
@@ -210,5 +215,77 @@ describe('ProviderRegistration', () => {
     component.removeBranch(0);
 
     expect(component.branches).toHaveLength(1);
+  });
+
+  it('mantiene los empleados y su rol separados por sucursal', () => {
+    component.business.supplierType = 'empresa';
+    component.addBranch();
+
+    const [firstBranch, secondBranch] = component.branches;
+
+    component.addEmployee(firstBranch);
+    component.addEmployee(secondBranch);
+
+    const [firstEmployee] = component.staffFor(firstBranch).employees;
+    const [secondEmployee] = component.staffFor(secondBranch).employees;
+
+    firstEmployee.email = 'gerencia@example.test';
+    firstEmployee.role = 'gerente';
+
+    secondEmployee.email = 'empleado@example.test';
+    secondEmployee.role = 'empleado';
+
+    expect(component.staffFor(firstBranch).employees).toEqual([firstEmployee]);
+    expect(component.staffFor(secondBranch).employees).toEqual([secondEmployee]);
+
+    component.removeEmployee(firstBranch, 0);
+
+    expect(component.staffFor(firstBranch).employees).toHaveLength(0);
+    expect(component.staffFor(secondBranch).employees[0]).toBe(secondEmployee);
+  });
+
+  it('impide avanzar si dos empleados usan el mismo correo', () => {
+    component.currentStep = 5;
+    component.business.supplierType = 'empresa';
+    component.manager.email = 'proveedor@example.test';
+    component.addBranch();
+
+    const [firstBranch, secondBranch] = component.branches;
+
+    component.addEmployee(firstBranch);
+    component.addEmployee(secondBranch);
+
+    Object.assign(component.staffFor(firstBranch).employees[0], {
+      name: 'Ana',
+      lastname_p: 'López',
+      email: 'personal@example.test',
+      password: 'ClaveDePrueba1!',
+      role: 'gerente',
+    });
+
+    Object.assign(component.staffFor(secondBranch).employees[0], {
+      name: 'Luis',
+      lastname_p: 'García',
+      email: ' PERSONAL@example.test ',
+      password: 'ClaveDePrueba2!',
+      role: 'empleado',
+    });
+
+    component.continue();
+
+    expect(component.currentStep).toBe(5);
+    expect(component.employeeErrors.join(' ')).toMatch(/correo distinto/i);
+  });
+
+  it('mantiene deshabilitada la autoasignación del proveedor como gerente', async () => {
+    component.currentStep = 5;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const checkbox = fixture.nativeElement.querySelector(
+      'input[name="owner-manager-0"]',
+    ) as HTMLInputElement | null;
+
+    expect(checkbox?.disabled).toBe(true);
   });
 });

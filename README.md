@@ -171,3 +171,28 @@ persistencia de los locales en Backend están pendientes de integración.
 
 Las pruebas unitarias cubren las validaciones de locales, el armado de
 `branches`, el límite para proveedores independientes y el avance a Documentos.
+
+## Empleados y confirmación del registro (FRONTENDAN-8)
+
+En `/registro-proveedor`, **Empleados (opcional)** aparece después de **Locales**
+y antes de **Documentos requeridos**. El proveedor puede omitir el paso o agregar
+personas con rol Empleado o Gerente a cada sucursal. El asistente valida los
+datos de cada persona y evita repetir correos entre sucursales o usar el correo
+del proveedor para una cuenta adicional. Las contraseñas de empleados permanecen
+en memoria durante el registro.
+
+El Frontend prepara los empleados en `branches[].employees` para el envío.
+La pantalla **Recibimos tu solicitud** está preparada para mostrar el folio
+cuando `POST /api/supplier-applications` confirme el alta.
+
+### Pruebas unitarias
+
+Desde la carpeta del Frontend, en PowerShell:
+
+```powershell
+pnpm.cmd test --watch=false
+```
+
+Las pruebas del asistente cubren el avance sin empleados, la separación del
+personal por sucursal, el rechazo de correos duplicados y el estado temporal
+de la casilla de autoasignación.

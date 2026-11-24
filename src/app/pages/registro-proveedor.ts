@@ -1,13 +1,17 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Subscription, finalize, take, timeout } from 'rxjs';
+import { Subscription, finalize, firstValueFrom, take, timeout } from 'rxjs';
 
 import {
   ProviderRegistrationApi,
   type ProviderDocumentType,
   type SupplierType,
   type RegistrationCategory,
+  type SupplierEmployeeInput,
+  type SupplierApplicationInput,
+  type SupplierApplicationReceipt,
 } from '../registration/provider-registration-api';
 import { BranchMap } from '../registration/branch-map';
 import {
@@ -18,7 +22,7 @@ import {
   type BranchDraft,
 } from '../registration/provider-branches';
 
-type RegistrationStep = 1 | 2 | 3 | 4 | 5;
+type RegistrationStep = 1 | 2 | 3 | 4 | 5 | 6;
 type DocumentStatus = 'pending' | 'ready' | 'error';
 
 interface ManagerDraft {
@@ -52,6 +56,8 @@ interface RegistrationDocument extends ProviderDocumentType {
   previewUrl?: string;
   status: DocumentStatus;
   error?: string;
+  fileKey?: string;
+  dueDate?: string;
 }
 
 const DRAFT_KEY = 'fixora-provider-registration-draft-v1';
@@ -131,6 +137,81 @@ export class ProviderRegistration implements OnInit, OnDestroy {
     return this.branches.map(toBranchInput);
   }
 
+  private readonly staffByBranch = new WeakMap<
+    BranchDraft,
+    { employees: SupplierEmployeeInput[]; managerIsOwner: boolean }
+  >();
+
+  // Actívalo cuando Backend procese manager_is_owner al crear la solicitud.
+  readonly ownerManagerSupported = false;
+
+  readonly submitting = signal(false);
+  readonly submissionError = signal('');
+  readonly receipt = signal<SupplierApplicationReceipt | null>(null);
+  employeeErrors: string[] = [];
+
+  staffFor(branch: BranchDraft) {
+    let staff = this.staffByBranch.get(branch);
+
+    if (!staff) {
+      staff = { employees: [], managerIsOwner: false };
+      this.staffByBranch.set(branch, staff);
+    }
+
+    return staff;
+  }
+
+  addEmployee(branch: BranchDraft): void {
+    this.staffFor(branch).employees.push({
+      name: '',
+      lastname_p: '',
+      email: '',
+      password: '',
+      role: 'empleado',
+    });
+  }
+
+  removeEmployee(branch: BranchDraft, index: number): void {
+    this.staffFor(branch).employees.splice(index, 1);
+    this.employeeErrors = [];
+  }
+
+  private validateEmployees(): string[] {
+    const errors: string[] = [];
+    const emails = new Set([this.manager.email.trim().toLowerCase()]);
+
+    this.branches.forEach((branch, branchIndex) => {
+      const { employees, managerIsOwner } = this.staffFor(branch);
+
+      if (managerIsOwner && !this.ownerManagerSupported) {
+        errors.push(`Local ${branchIndex + 1}: la asignación del proveedor como gerente aún no está disponible.`);
+      }
+
+      employees.forEach((employee, employeeIndex) => {
+        const label = `Local ${branchIndex + 1}, empleado ${employeeIndex + 1}`;
+        const email = employee.email.trim().toLowerCase();
+
+        if (!employee.name.trim() || !employee.lastname_p.trim()) {
+          errors.push(`${label}: escribe el nombre y el apellido paterno.`);
+        }
+
+        if (!EMAIL_PATTERN.test(email)) {
+          errors.push(`${label}: escribe un correo válido.`);
+        } else if (emails.has(email)) {
+          errors.push(`${label}: usa un correo distinto al del proveedor y al de los demás empleados.`);
+        } else {
+          emails.add(email);
+        }
+
+        if (employee.password.length < 8) {
+          errors.push(`${label}: la contraseña debe tener al menos 8 caracteres.`);
+        }
+      });
+    });
+
+    return errors;
+  }
+
 
 
   ngOnInit(): void {
@@ -183,12 +264,23 @@ export class ProviderRegistration implements OnInit, OnDestroy {
 
       this.currentStep = 5;
       this.saveDraft();
+      return;
+    }
+
+    if (this.currentStep === 5) {
+      this.employeeErrors = this.validateEmployees();
+      if (this.employeeErrors.length) return;
+
+      this.currentStep = 6;
       this.loadDocumentTypes();
+      this.saveDraft();
     }
   }
 
   back(): void {
-    if (this.currentStep === 5) {
+    if (this.currentStep === 6) {
+      this.currentStep = 5;
+    } else if (this.currentStep === 5) {
       this.currentStep = 4;
     } else if (this.currentStep === 4) {
       this.currentStep = 3;
@@ -268,12 +360,12 @@ export class ProviderRegistration implements OnInit, OnDestroy {
         this.branches = draft.branches;
       }
 
-      if (!draft.branches && this.currentStep === 5) {
+      if (!draft.branches && (this.currentStep === 5 || this.currentStep === 6)) {
         this.currentStep = 4;
       }
 
       if (this.currentStep === 4) this.loadCategories();
-      if (this.currentStep === 5) this.loadDocumentTypes();
+      if (this.currentStep === 6) this.currentStep = 5;
     } catch {
       sessionStorage.removeItem(DRAFT_KEY);
     }
@@ -288,6 +380,7 @@ export class ProviderRegistration implements OnInit, OnDestroy {
     document.file = undefined;
     document.fileName = undefined;
     document.fileSize = undefined;
+    document.fileKey = undefined;
     document.error = undefined;
 
     if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
@@ -317,6 +410,7 @@ export class ProviderRegistration implements OnInit, OnDestroy {
     document.file = undefined;
     document.fileName = undefined;
     document.fileSize = undefined;
+    document.fileKey = undefined;
     document.error = undefined;
     document.status = 'pending';
     input.value = '';
@@ -328,6 +422,103 @@ export class ProviderRegistration implements OnInit, OnDestroy {
 
   retryDocumentTypes(): void {
     this.loadDocumentTypes();
+  }
+
+  async submitRegistration(): Promise<void> {
+    if (
+      this.submitting() ||
+      this.receipt() ||
+      this.documentsLoading ||
+      this.documentsError
+    ) return;
+
+    this.submissionError.set('');
+
+    if (Object.keys(this.validateManager()).length > 0) {
+      this.submissionError.set('Vuelve a Datos del encargado y completa los campos pendientes.');
+      return;
+    }
+
+    const supplierType = this.business.supplierType;
+    if (!supplierType || Object.keys(this.validateBusiness()).length > 0) {
+      this.submissionError.set('Vuelve a Datos del negocio y revisa los campos pendientes.');
+      return;
+    }
+
+    this.employeeErrors = this.validateEmployees();
+    if (this.employeeErrors.length) {
+      this.submissionError.set('Vuelve a Empleados y revisa los datos antes de enviar.');
+      return;
+    }
+
+    const documents: SupplierApplicationInput['documents'] = [];
+
+    for (const document of this.documents) {
+      if (!document.mandatory && !document.file && !document.fileKey) continue;
+
+      if (!document.fileKey) {
+        this.submissionError.set(`Falta completar la carga de «${document.name}» al servidor.`);
+        return;
+      }
+
+      if (document.requires_expiration_date && !document.dueDate) {
+        this.submissionError.set(`Captura la fecha de vencimiento de «${document.name}».`);
+        return;
+      }
+
+      documents.push({
+        type_document_id: document.id,
+        file_key: document.fileKey,
+        ...(document.dueDate ? { due_date: document.dueDate } : {}),
+      });
+    }
+
+    const payload: SupplierApplicationInput = {
+      supplier_type: supplierType,
+      manager: {
+        name: this.manager.name.trim(),
+        lastname_p: this.manager.lastnameP.trim(),
+        lastname_m: this.manager.lastnameM.trim() || undefined,
+        email: this.manager.email.trim().toLowerCase(),
+        phone: this.manager.phone.trim() || undefined,
+        password: this.manager.password,
+      },
+      business: {
+        name: this.business.name.trim(),
+        phone: this.business.phone.trim(),
+        email: this.business.email.trim().toLowerCase(),
+      },
+      branches: this.branches.map((branch) => {
+        const staff = this.staffFor(branch);
+
+        return {
+          ...toBranchInput(branch),
+          employees: staff.employees.map((employee) => ({
+            ...employee,
+            email: employee.email.trim().toLowerCase(),
+            name: employee.name.trim(),
+            lastname_p: employee.lastname_p.trim(),
+          })),
+          ...(staff.managerIsOwner ? { manager_is_owner: true } : {}),
+        };
+      }),
+      documents,
+    };
+
+    this.submitting.set(true);
+
+    try {
+      const { data } = await firstValueFrom(this.registrationApi.submitApplication(payload));
+      this.receipt.set(data);
+      this.clearDraft();
+    } catch (error: unknown) {
+      const message = error instanceof HttpErrorResponse ? error.error?.message : undefined;
+      this.submissionError.set(
+        typeof message === 'string' ? message : 'No se pudo enviar la solicitud. Intenta de nuevo.',
+      );
+    } finally {
+      this.submitting.set(false);
+    }
   }
 
   private validateManager(): Record<string, string> {
@@ -383,7 +574,7 @@ export class ProviderRegistration implements OnInit, OnDestroy {
   }
 
   private isRegistrationStep(value: unknown): value is RegistrationStep {
-    return value === 1 || value === 2 || value === 3 || value === 4 || value === 5;
+    return value === 1 || value === 2 || value === 3 || value === 4 || value === 5 || value === 6;
   }
 
   private loadDocumentTypes(): void {

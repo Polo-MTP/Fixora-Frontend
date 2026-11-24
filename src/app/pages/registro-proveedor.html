@@ -23,7 +23,10 @@
           <span>4</span> Locales
         </li>
         <li [class.registration-steps__item--active]="currentStep === 5">
-          <span>5</span> Documentos requeridos
+          <span>5</span> Empleados (opcional)
+        </li>
+        <li [class.registration-steps__item--active]="currentStep === 6">
+          <span>6</span> Documentos requeridos
         </li>
       </ol>
 
@@ -46,9 +49,16 @@
         </p>
       }
 
-      @if (currentStep === 1) {
+      @if (receipt(); as confirmation) {
+        <section class="registration-panel" aria-labelledby="submission-title">
+          <h2 id="submission-title">Recibimos tu solicitud</h2>
+          <p>Revisaremos tus datos y te enviaremos el resultado por correo electrónico.</p>
+          <p>Folio de solicitud: <strong>{{ confirmation.id }}</strong></p>
+          <a class="primary-button" routerLink="/">Volver al inicio</a>
+        </section>
+      } @else if (currentStep === 1) {
         <div class="registration-panel registration-panel--intro">
-          <p class="eyebrow">Paso 1 de 5</p>
+          <p class="eyebrow">Paso 1 de 6</p>
           <h2>Todo empieza con tu negocio.</h2>
           <p class="registration-panel__lead">
             Completarás una breve solicitud con los datos del encargado y la información principal
@@ -80,7 +90,7 @@
         </div>
       } @else if (currentStep === 2) {
         <form class="registration-panel" (ngSubmit)="continue()" novalidate>
-          <p class="eyebrow">Paso 2 de 5</p>
+          <p class="eyebrow">Paso 2 de 6</p>
           <h2>¿Quién estará a cargo?</h2>
           <p class="registration-panel__lead">
             Esta persona será el contacto principal y tendrá acceso a la cuenta del proveedor.
@@ -235,7 +245,7 @@
         </form>
       } @else if (currentStep === 3) {
         <form class="registration-panel" (ngSubmit)="continue()" novalidate>
-          <p class="eyebrow">Paso 3 de 5</p>
+          <p class="eyebrow">Paso 3 de 6</p>
           <h2>Háblanos de tu negocio.</h2>
           <p class="registration-panel__lead">
             Esta información se mostrará durante el proceso de verificación y será el punto de
@@ -343,7 +353,7 @@
         </form>
       } @else if (currentStep === 4) {
         <form class="registration-panel" (ngSubmit)="continue()" novalidate>
-          <p class="eyebrow">Paso 4 de 5</p>
+          <p class="eyebrow">Paso 4 de 6</p>
           <h2>Registra tus locales</h2>
 
           @if (categoriesLoading) {
@@ -506,16 +516,95 @@
               class="primary-button"
               [disabled]="categoriesLoading || !!categoriesError || !categories.length"
             >
-              Continuar a documentos
+              Continuar a empleados
             </button>
           </div>
         </form>
       } @else if (currentStep === 5) {
+        <form class="registration-panel" (ngSubmit)="continue()" novalidate>
+          <p class="eyebrow">Paso 5 de 6</p>
+          <h2>Empleados por local</h2>
+          <p>Puedes continuar sin agregar empleados.</p>
+
+          @for (branch of branches; track branch; let i = $index) {
+            @let staff = staffFor(branch);
+
+            <fieldset class="branch-card">
+              <legend>{{ branch.name || 'Local ' + (i + 1) }}</legend>
+
+              <label>
+                <input
+                  type="checkbox"
+                  [name]="'owner-manager-' + i"
+                  [(ngModel)]="staff.managerIsOwner"
+                  [disabled]="!ownerManagerSupported"
+                />
+                Ser gerente de este local
+              </label>
+              @if (!ownerManagerSupported) {
+                <small>La asignación del proveedor como gerente está pendiente de integración.</small>
+              }
+
+              @for (employee of staff.employees; track employee; let j = $index) {
+                <fieldset class="branch-card">
+                  <legend>Empleado {{ j + 1 }}</legend>
+                  <div class="form-grid form-grid--two-columns">
+                    <label class="form-field">
+                      Nombre
+                      <input [name]="'employee-name-' + i + '-' + j" [(ngModel)]="employee.name" required />
+                    </label>
+                    <label class="form-field">
+                      Apellido paterno
+                      <input [name]="'employee-lastname-' + i + '-' + j" [(ngModel)]="employee.lastname_p" required />
+                    </label>
+                    <label class="form-field">
+                      Correo electrónico
+                      <input type="email" [name]="'employee-email-' + i + '-' + j" [(ngModel)]="employee.email" required />
+                    </label>
+                    <label class="form-field">
+                      Contraseña inicial
+                      <input type="password" autocomplete="new-password"
+                        [name]="'employee-password-' + i + '-' + j" [(ngModel)]="employee.password" required />
+                    </label>
+                    <label class="form-field">
+                      Rol
+                      <select [name]="'employee-role-' + i + '-' + j" [(ngModel)]="employee.role">
+                        <option value="empleado">Empleado</option>
+                        <option value="gerente">Gerente</option>
+                      </select>
+                    </label>
+                  </div>
+                  <button type="button" class="text-button" (click)="removeEmployee(branch, j)">
+                    Quitar empleado
+                  </button>
+                </fieldset>
+              }
+
+              <button type="button" class="secondary-button" (click)="addEmployee(branch)">
+                Agregar empleado
+              </button>
+            </fieldset>
+          }
+
+          @if (employeeErrors.length) {
+            <ul role="alert">
+              @for (error of employeeErrors; track error) {
+                <li>{{ error }}</li>
+              }
+            </ul>
+          }
+
+          <div class="form-actions">
+            <button type="button" class="secondary-button" (click)="back()">Anterior</button>
+            <button type="submit" class="primary-button">Continuar a documentos</button>
+          </div>
+        </form>
+      } @else if (currentStep === 6) {
         <section
           class="registration-panel registration-panel--documents"
           aria-labelledby="documents-title"
         >
-          <p class="eyebrow">Paso 5 de 5</p>
+          <p class="eyebrow">Paso 6 de 6</p>
           <h2 id="documents-title">Documentos requeridos</h2>
           <p class="registration-panel__lead">
             Estos documentos corresponden a un proveedor
@@ -627,7 +716,18 @@
 
           <div class="form-actions">
             <button class="secondary-button" type="button" (click)="back()">Anterior</button>
-            <a class="primary-button" routerLink="/">Guardar avance</a>
+            @if (submissionError()) {
+              <p role="alert">{{ submissionError() }}</p>
+            }
+
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="submitting() || documentsLoading || !!documentsError"
+              (click)="submitRegistration()"
+            >
+              {{ submitting() ? 'Enviando…' : 'Enviar solicitud' }}
+            </button>
           </div>
         </section>
       }
