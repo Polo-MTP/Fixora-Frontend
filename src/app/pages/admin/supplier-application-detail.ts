@@ -1,7 +1,7 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AdminShell } from '../../admin/admin-shell';
@@ -14,7 +14,7 @@ import {
 } from '../../admin/supplier-applications-api';
 
 @Component({
-    imports: [AdminShell, CurrencyPipe, DatePipe, RouterLink],
+    imports: [AdminShell, CurrencyPipe, DatePipe, RouterLink, TitleCasePipe],
     templateUrl: './supplier-application-detail.html',
     styleUrl: './supplier-application-detail.css',
 })
@@ -29,10 +29,17 @@ export class SupplierApplicationDetailPage implements OnInit {
     readonly loading = signal(false);
     readonly previewLoading = signal(false);
     readonly saving = signal(false);
+    readonly canReviewApplication = computed(
+        () => this.application()?.state === 'pendiente' && !this.loading() && !this.saving(),
+    );
+    readonly canFinalizeApplication = computed(
+        () => this.canReviewApplication() && this.application()?.documents_pending === 0,
+    );
     readonly errorMessage = signal('');
     readonly previewError = signal('');
     readonly actionMessage = signal('');
     readonly providerComment = signal('');
+    readonly documentComment = signal('');
 
     private applicationId = '';
 
@@ -74,6 +81,7 @@ export class SupplierApplicationDetailPage implements OnInit {
         this.selectedDocument.set(document);
         this.previewUrl.set('');
         this.previewError.set('');
+        this.documentComment.set('');
 
         if (!document) return;
 
@@ -102,7 +110,7 @@ export class SupplierApplicationDetailPage implements OnInit {
 
     reviewDocument(result: 'aprobado' | 'rechazado'): void {
         const document = this.selectedDocument();
-        const comment = this.providerComment().trim();
+        const comment = this.documentComment().trim();
 
         if (!document || this.saving()) return;
 
@@ -123,7 +131,7 @@ export class SupplierApplicationDetailPage implements OnInit {
             .subscribe({
                 next: () => {
                     this.saving.set(false);
-                    this.providerComment.set('');
+                    this.documentComment.set('');
                     this.actionMessage.set(
                         result === 'aprobado'
                             ? 'Documento aprobado.'
@@ -143,7 +151,15 @@ export class SupplierApplicationDetailPage implements OnInit {
     resolveApplication(state: ResolutionState): void {
         const comment = this.providerComment().trim();
 
-        if (this.saving()) return;
+        if (!this.canReviewApplication()) return;
+
+        if (
+            (state === 'aprobada' || state === 'rechazada') &&
+            !this.canFinalizeApplication()
+        ) {
+            this.errorMessage.set('Primero deben estar aprobados todos los documentos.');
+            return;
+        }
 
         if (state !== 'aprobada' && !comment) {
             this.errorMessage.set('Escribe el motivo que se enviará al proveedor.');

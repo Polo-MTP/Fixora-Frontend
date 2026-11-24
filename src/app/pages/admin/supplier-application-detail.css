@@ -279,12 +279,16 @@ dd {
     padding: 0.8rem;
 }
 
-.provider-note label {
+.provider-note label,
+.validation-card label {
+    display: block;
+    margin-top: 0.5rem;
     font-size: 0.7rem;
     font-weight: 750;
 }
 
-.provider-note textarea {
+.provider-note textarea,
+.validation-card textarea {
     width: 100%;
     resize: vertical;
     padding: 0.65rem;
@@ -297,6 +301,18 @@ dd {
 
 .provider-note small {
     font-size: 0.62rem;
+}
+
+.review-info .provider-note {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.review-info .provider-note textarea {
+    width: 100%;
+    min-height: 8rem;
+    resize: vertical;
 }
 
 .action-message {
@@ -374,6 +390,28 @@ dd {
 
 .feedback--error {
     color: #a53027;
+}
+
+.branch-detail {
+    padding-block: 0.75rem;
+    overflow-wrap: anywhere;
+}
+
+.branch-detail + .branch-detail {
+    border-top: 1px solid #e5ebf2;
+}
+
+.branch-detail h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+}
+
+.branch-detail__list {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 @media (max-width: 1050px) {
