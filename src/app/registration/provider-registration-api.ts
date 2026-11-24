@@ -2,6 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import type { toBranchInput } from './provider-branches';
+
 export interface RegistrationCategory {
   id: string;
   name: string;
@@ -22,6 +24,51 @@ interface DocumentTypesResponse {
   data: ProviderDocumentType[];
 }
 
+export interface SupplierEmployeeInput {
+  email: string;
+  password: string;
+  name: string;
+  lastname_p: string;
+  lastname_m?: string;
+  phone?: string;
+  role: 'empleado' | 'gerente';
+}
+
+export interface SupplierApplicationInput {
+  supplier_type: SupplierType;
+  manager: {
+    email: string;
+    password: string;
+    name: string;
+    lastname_p: string;
+    lastname_m?: string;
+    phone?: string;
+  };
+  business: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  branches: Array<
+    ReturnType<typeof toBranchInput> & {
+      employees: SupplierEmployeeInput[];
+      manager_is_owner?: boolean;
+    }
+  >;
+  documents: Array<{
+    type_document_id: string;
+    file_key: string;
+    due_date?: string;
+  }>;
+}
+
+export interface SupplierApplicationReceipt {
+  id: string;
+  state: string;
+  branches_count: number;
+  documents_count: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProviderRegistrationApi {
   private readonly http = inject(HttpClient);
@@ -33,5 +80,14 @@ export class ProviderRegistrationApi {
 
   getCategories(): Observable<{ data: { id: string | number; name: string }[] }> {
     return this.http.get<{ data: { id: string | number; name: string }[] }>('/api/categories');
+  }
+
+  submitApplication(
+    application: SupplierApplicationInput,
+  ): Observable<{ data: SupplierApplicationReceipt }> {
+    return this.http.post<{ data: SupplierApplicationReceipt }>(
+      '/api/supplier-applications',
+      application,
+    );
   }
 }
