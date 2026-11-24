@@ -1,7 +1,7 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AdminShell } from '../../admin/admin-shell';
@@ -13,8 +13,11 @@ import {
     type SupplierApplicationState,
 } from '../../admin/supplier-applications-api';
 
+type ComparisonField = 'name' | 'address' | 'age' | 'legibility';
+type ComparisonResult = 'positive' | 'negative';
+
 @Component({
-    imports: [AdminShell, CurrencyPipe, DatePipe, RouterLink],
+    imports: [AdminShell, CurrencyPipe, DatePipe, RouterLink, TitleCasePipe],
     templateUrl: './supplier-application-detail.html',
     styleUrl: './supplier-application-detail.css',
 })
@@ -29,10 +32,74 @@ export class SupplierApplicationDetailPage implements OnInit {
     readonly loading = signal(false);
     readonly previewLoading = signal(false);
     readonly saving = signal(false);
+    readonly canReviewApplication = computed(
+        () => this.application()?.state === 'pendiente' && !this.loading() && !this.saving(),
+    );
+    readonly canFinalizeApplication = computed(
+        () => this.canReviewApplication() && this.application()?.documents_pending === 0,
+    );
     readonly errorMessage = signal('');
     readonly previewError = signal('');
     readonly actionMessage = signal('');
     readonly providerComment = signal('');
+    readonly documentComment = signal('');
+
+    readonly comparisonFields: ReadonlyArray<{
+        key: ComparisonField;
+        label: string;
+        positive: string;
+        negative: string;
+    }> = [
+        { key: 'name', label: 'Nombre', positive: 'Coincide', negative: 'No coincide' },
+        { key: 'address', label: 'Dirección', positive: 'Coincide', negative: 'No coincide' },
+        { key: 'age', label: 'Antigüedad', positive: 'Vigente', negative: 'Fuera de vigencia' },
+        { key: 'legibility', label: 'Legibilidad', positive: 'Bien', negative: 'Ilegible' },
+    ];
+
+    readonly comparisonResults = signal<Partial<Record<ComparisonField, ComparisonResult>>>({});
+
+    setComparisonResult(field: ComparisonField, value: string): void {
+        this.comparisonResults.update((current) => {
+            const next = { ...current };
+
+            if (value === 'positive' || value === 'negative') {
+                next[field] = value;
+            } else {
+                delete next[field];
+            }
+
+            return next;
+        });
+    }
+
+    comparisonValue(item: SupplierApplicationDetail, field: ComparisonField): string {
+        switch (field) {
+            case 'name':
+                return item.manager_name || 'Nombre no registrado';
+
+            case 'address': {
+                const addresses = item.branches.map(({ address }) =>
+                    [
+                        [address.street, address.num_ext].filter(Boolean).join(' '),
+                        address.colony,
+                        address.municipality,
+                        address.state,
+                        address.postal_code,
+                    ].filter(Boolean).join(', '),
+                );
+
+                return addresses.filter(Boolean).join(' · ') || 'Dirección no registrada';
+            }
+
+            case 'age': {
+                const dueDate = this.selectedDocument()?.due_date;
+                return dueDate ? `Vencimiento registrado: ${dueDate}` : 'Por comprobar en el archivo';
+            }
+
+            case 'legibility':
+                return 'Por comprobar en la vista previa';
+        }
+    }
 
     private applicationId = '';
 
@@ -71,9 +138,14 @@ export class SupplierApplicationDetailPage implements OnInit {
     }
 
     selectDocument(document: ApplicationDocument | null): void {
+        if (this.selectedDocument()?.id !== document?.id) {
+            this.comparisonResults.set({});
+        }
+
         this.selectedDocument.set(document);
         this.previewUrl.set('');
         this.previewError.set('');
+        this.documentComment.set('');
 
         if (!document) return;
 
@@ -102,7 +174,7 @@ export class SupplierApplicationDetailPage implements OnInit {
 
     reviewDocument(result: 'aprobado' | 'rechazado'): void {
         const document = this.selectedDocument();
-        const comment = this.providerComment().trim();
+        const comment = this.documentComment().trim();
 
         if (!document || this.saving()) return;
 
@@ -123,7 +195,7 @@ export class SupplierApplicationDetailPage implements OnInit {
             .subscribe({
                 next: () => {
                     this.saving.set(false);
-                    this.providerComment.set('');
+                    this.documentComment.set('');
                     this.actionMessage.set(
                         result === 'aprobado'
                             ? 'Documento aprobado.'
@@ -143,7 +215,15 @@ export class SupplierApplicationDetailPage implements OnInit {
     resolveApplication(state: ResolutionState): void {
         const comment = this.providerComment().trim();
 
-        if (this.saving()) return;
+        if (!this.canReviewApplication()) return;
+
+        if (
+            (state === 'aprobada' || state === 'rechazada') &&
+            !this.canFinalizeApplication()
+        ) {
+            this.errorMessage.set('Primero deben estar aprobados todos los documentos.');
+            return;
+        }
 
         if (state !== 'aprobada' && !comment) {
             this.errorMessage.set('Escribe el motivo que se enviará al proveedor.');

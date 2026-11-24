@@ -1,9 +1,9 @@
 <app-admin-shell>
-    <a class="back-link" routerLink="/administrador/verificaciones">← Volver a verificaciones</a>
-
     @if (loading()) {
+    <a class="back-link" routerLink="/administrador/verificaciones">← Volver a verificaciones</a>
     <p class="feedback" role="status">Cargando solicitud…</p>
     } @else if (errorMessage() && !application()) {
+    <a class="back-link" routerLink="/administrador/verificaciones">← Volver a verificaciones</a>
     <p class="feedback feedback--error" role="alert">{{ errorMessage() }}</p>
     } @else if (application(); as item) {
     <header class="detail-heading">
@@ -11,14 +11,16 @@
             <a class="back-icon" routerLink="/administrador/verificaciones" aria-label="Regresar">←</a>
             <div class="avatar">{{ item.manager_name.slice(0, 1) || 'P' }}</div>
             <div>
-                <h1>{{ item.manager_name || 'Proveedor' }}</h1>
+                <div class="heading-title">
+                    <h1>{{ item.manager_name || 'Proveedor' }}</h1>
+                    <span class="status-badge" [class]="statusClass(item.state)">
+                        {{ statusLabel(item.state) }}
+                    </span>
+                </div>
                 <p>{{ item.business_name }} · Folio VR-{{ item.id }} · Enviada {{ item.application_date | date:
                     'mediumDate' }}</p>
             </div>
         </div>
-        <span class="status-badge" [class]="statusClass(item.state)">
-            {{ statusLabel(item.state) }}
-        </span>
     </header>
 
     <section class="review-layout">
@@ -83,68 +85,71 @@
         </section>
 
         <aside class="review-info">
-            <article class="info-card">
-                <h2>Datos declarados</h2>
-                <dl>
-                    <dt>Encargado</dt>
-                    <dd>{{ item.manager_name || 'No disponible' }}</dd>
-                    <dt>Correo</dt>
-                    <dd>{{ item.email }}</dd>
-                    <dt>Negocio</dt>
-                    <dd>{{ item.business?.name || item.business_name }}</dd>
-                    <dt>RFC</dt>
-                    <dd>{{ item.rfc || 'No proporcionado' }}</dd>
-                    @if (item.branches[0]; as branch) {
-                    <dt>Dirección</dt>
-                    <dd>
-                        {{ branch.address.street }} {{ branch.address.num_ext }},
-                        {{ branch.address.colony }}, {{ branch.address.municipality }},
-                        {{ branch.address.state }} {{ branch.address.postal_code }}
-                    </dd>
-                    }
-                </dl>
-            </article>
+            <article class="info-card comparison-card">
+                <h2>Declarado vs. documento</h2>
 
-            <article class="info-card validation-card">
-                <h2>Revisión del documento</h2>
+                @for (field of comparisonFields; track field.key) {
+                    @let result = comparisonResults()[field.key];
+
+                    <div class="comparison-row">
+                        <div class="comparison-row__text">
+                            <span>{{ field.label }}</span>
+                            <strong>{{ comparisonValue(item, field.key) }}</strong>
+                        </div>
+
+                        @if (selectedDocument() && item.state === 'pendiente') {
+                            <select
+                                class="comparison-select"
+                                [class.comparison-select--positive]="result === 'positive'"
+                                [class.comparison-select--negative]="result === 'negative'"
+                                [attr.aria-label]="'Resultado de ' + field.label"
+                                [value]="result || ''"
+                                [disabled]="saving()"
+                                (change)="setComparisonResult(field.key, $any($event.target).value)"
+                            >
+                                <option value="">Por revisar</option>
+                                <option value="positive">✓ {{ field.positive }}</option>
+                                <option value="negative">✕ {{ field.negative }}</option>
+                            </select>
+                        }
+                    </div>
+                }
+
                 @if (selectedDocument(); as document) {
-                <p class="validation-result">
-                    Resultado:
-                    <strong>{{ document.validation?.result || 'Pendiente de revisión' }}</strong>
-                </p>
-                @if (document.validation?.comment) {
-                <p class="validation-comment">{{ document.validation?.comment }}</p>
+                    <details class="document-comment">
+                        <summary>Comentario del documento</summary>
+
+                        @if (document.validation?.comment; as comment) {
+                            <p>{{ comment }}</p>
+                        }
+
+                        @if (item.state === 'pendiente') {
+                            <textarea
+                                rows="3"
+                                aria-label="Comentario del documento"
+                                [value]="documentComment()"
+                                [disabled]="saving()"
+                                (input)="documentComment.set($any($event.target).value)"
+                            ></textarea>
+                        }
+                    </details>
                 }
-                } @else {
-                <p class="muted">Selecciona un documento para ver su revisión.</p>
-                }
-                <p class="muted">
-                    La API no proporciona datos OCR para comparar automáticamente el contenido del archivo.
-                </p>
             </article>
 
-            @if (item.branches.length) {
-            <article class="info-card">
-                <h2>Local y servicio</h2>
-                @for (branch of item.branches; track branch.id) {
-                <strong>{{ branch.name }}</strong>
-                @for (category of branch.categories; track category.category_id) {
-                <p class="muted">
-                    {{ category.category_name }} · {{ category.base_price | currency: 'MXN' }}
-                </p>
-                }
-                }
-            </article>
-            }
+            <section class="info-card provider-note">
+                <label for="provider-comment">Nota para el proveedor</label>
+                <textarea
+                    id="provider-comment"
+                    rows="6"
+                    maxlength="2000"
+                    [value]="providerComment()"
+                    [disabled]="saving() || item.state !== 'pendiente'"
+                    (input)="providerComment.set($any($event.target).value)"
+                    placeholder="Escribe una nota para el proveedor."
+                ></textarea>
+                <small>Se envía por correo y aparece en su página de estado.</small>
+            </section>
         </aside>
-    </section>
-
-    <section class="provider-note">
-        <label for="provider-comment">Nota para el proveedor</label>
-        <textarea id="provider-comment" rows="3" maxlength="2000" [value]="providerComment()"
-            (input)="providerComment.set($any($event.target).value)"
-            placeholder="Escribe el motivo del rechazo o los documentos que debe corregir."></textarea>
-        <small>Obligatoria para rechazar la solicitud o pedir correcciones.</small>
     </section>
 
     @if (errorMessage()) {
@@ -159,19 +164,134 @@
             {{ item.documents_pending }} documentos faltantes o pendientes de aprobar
         </span>
         <div class="decision-actions">
-            <button class="button button--outline" type="button" [disabled]="saving() || item.state !== 'pendiente'"
+            <button class="button button--outline" type="button" aria-label="Rechazar solicitud" [disabled]="!canFinalizeApplication()"
                 (click)="resolveApplication('rechazada')">
-                Rechazar solicitud
+                Rechazar
             </button>
-            <button class="button button--secondary" type="button" [disabled]="saving() || item.state !== 'pendiente'"
+            <button class="button button--secondary" type="button" [disabled]="!canReviewApplication()"
                 (click)="resolveApplication('documentacion_incompleta')">
                 Pedir corrección
             </button>
-            <button class="button button--primary" type="button" [disabled]="saving() || item.state !== 'pendiente'"
+            <button class="button button--primary" type="button" [disabled]="!canFinalizeApplication()"
                 (click)="resolveApplication('aprobada')">
                 {{ saving() ? 'Guardando…' : 'Aprobar proveedor' }}
             </button>
         </div>
     </footer>
+
+    <details class="info-card application-data">
+        <summary>Datos de la solicitud</summary>
+
+        <section>
+            <h2>Encargado</h2>
+            <dl>
+                <dt>Nombre</dt>
+                <dd>{{ item.manager_name || 'No disponible' }}</dd>
+                <dt>Correo electrónico</dt>
+                <dd>{{ item.email || 'No proporcionado' }}</dd>
+            </dl>
+        </section>
+
+        <section>
+            <h2>Negocio</h2>
+            <dl>
+                <dt>Nombre</dt>
+                <dd>{{ item.business?.name || item.business_name || 'No disponible' }}</dd>
+                <dt>Tipo de proveedor</dt>
+                <dd>{{ item.supplier_type | titlecase }}</dd>
+                <dt>RFC</dt>
+                <dd>{{ item.rfc || 'No proporcionado' }}</dd>
+                <dt>Identificación fiscal del negocio</dt>
+                <dd>{{ item.business?.tax_identification || 'No proporcionada' }}</dd>
+                <dt>Correo</dt>
+                <dd>{{ item.business?.email || 'No proporcionado' }}</dd>
+                <dt>Teléfono</dt>
+                <dd>{{ item.business?.phone || 'No proporcionado' }}</dd>
+            </dl>
+        </section>
+
+        <article class="info-card">
+            <h2>Locales y empleados</h2>
+
+            @for (branch of item.branches; track branch.id) {
+                <section class="branch-detail">
+                    <h3>{{ branch.name }}</h3>
+
+                    <dl>
+                        <dt>Dirección</dt>
+                        <dd>
+                            {{ branch.address.street }} {{ branch.address.num_ext }}
+                            @if (branch.address.num_int) {
+                                · Int. {{ branch.address.num_int }}
+                            }
+                            · {{ branch.address.colony }},
+                            {{ branch.address.municipality }}, {{ branch.address.state }}
+                            · C. P. {{ branch.address.postal_code }}
+                            @if (branch.address.country) {
+                                · {{ branch.address.country }}
+                            }
+                        </dd>
+
+                        @if (branch.address.reference) {
+                            <dt>Referencia</dt>
+                            <dd>{{ branch.address.reference }}</dd>
+                        }
+
+                        <dt>Horarios</dt>
+                        <dd>
+                            <ul class="branch-detail__list">
+                                @for (schedule of branch.schedules; track $index) {
+                                    <li>
+                                        {{ dayName(schedule.day_of_week) }}
+                                        · {{ schedule.open_time.slice(0, 5) }}–{{ schedule.close_time.slice(0, 5) }}
+                                    </li>
+                                } @empty {
+                                    <li class="muted">Sin horarios registrados.</li>
+                                }
+                            </ul>
+                        </dd>
+
+                        <dt>Categorías</dt>
+                        <dd>
+                            <ul class="branch-detail__list">
+                                @for (category of branch.categories; track category.category_id) {
+                                    <li>
+                                        {{ category.category_name }}
+                                        · {{ category.base_price | currency: 'MXN' : 'code' }}
+                                        @if (category.duration_minutes !== null) {
+                                            · {{ category.duration_minutes }} min
+                                        }
+                                    </li>
+                                } @empty {
+                                    <li class="muted">Sin categorías registradas.</li>
+                                }
+                            </ul>
+                        </dd>
+
+                        <dt>Empleados</dt>
+                        <dd>
+                            <ul class="branch-detail__list">
+                                @for (employee of (branch.employees ?? []); track employee.id) {
+                                    <li>
+                                        <strong>{{ employee.name || 'Nombre no disponible' }} {{ employee.lastname_p }}</strong>
+                                        <div>{{ employee.email }}</div>
+                                        <div class="muted">
+                                            {{ employee.role | titlecase }}
+                                            · {{ employee.active ? 'Activo' : 'Inactivo' }}
+                                            · {{ employee.can_attend ? 'Puede atender servicios' : 'Sin atención de servicios' }}
+                                        </div>
+                                    </li>
+                                } @empty {
+                                    <li class="muted">Sin empleados registrados.</li>
+                                }
+                            </ul>
+                        </dd>
+                    </dl>
+                </section>
+            } @empty {
+                <p class="muted">No hay locales registrados en esta solicitud.</p>
+            }
+        </article>
+    </details>
     }
 </app-admin-shell>

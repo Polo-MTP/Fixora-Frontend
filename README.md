@@ -196,3 +196,33 @@ pnpm.cmd test --watch=false
 Las pruebas del asistente cubren el avance sin empleados, la separación del
 personal por sucursal, el rechazo de correos duplicados y el estado temporal
 de la casilla de autoasignación.
+
+## Desglose y resolución de solicitudes (FRONTENDAN-10)
+
+En **Administración → Verificaciones → Ver desglose**, la ruta
+`/administrador/verificaciones/:id` permite revisar una solicitud de proveedor.
+La sección plegable **Datos de la solicitud** muestra la información del
+encargado, el negocio, los locales y sus empleados que devuelve API-13.
+
+El visor usa un enlace temporal para abrir el documento seleccionado. El
+administrador puede revisar cada archivo y guardar un comentario por separado.
+Los indicadores de **Declarado vs. documento** se marcan manualmente y se
+reinician al cambiar de archivo. La API guarda el resultado y el comentario
+del documento completo.
+
+Mientras la solicitud esté pendiente, se puede **Pedir corrección** con una
+nota para el proveedor. **Aprobar** y **Rechazar** se habilitan cuando
+`documents_pending` llega a `0`. Ese contador incluye documentos obligatorios
+faltantes y archivos adjuntos sin aprobar. El rechazo final requiere un motivo.
+
+### Verificación
+
+```powershell
+pnpm.cmd test --watch=false
+```
+
+Las pruebas unitarias cubren la carga del desglose, la selección de documentos,
+la separación de comentarios y las reglas de resolución. Para comprobar el
+flujo con la API local, abre una solicitud con archivos guardados, verifica
+que se puedan previsualizar y comprueba cómo cambian las acciones después de
+aprobar los documentos.

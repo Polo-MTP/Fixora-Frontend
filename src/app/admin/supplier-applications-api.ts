@@ -69,12 +69,25 @@ export interface ApplicationCategory {
     duration_minutes: number | null;
 }
 
+export interface ApplicationEmployee {
+    id: string;
+    user_id: string;
+    branch_id: string;
+    email: string;
+    name: string | null;
+    lastname_p: string | null;
+    role: string;
+    can_attend: boolean;
+    active: boolean;
+}
+
 export interface ApplicationBranch {
     id: string;
     name: string;
     address: ApplicationAddress;
     schedules: ApplicationSchedule[];
     categories: ApplicationCategory[];
+    employees?: ApplicationEmployee[];
 }
 
 export interface ApplicationDocument {
