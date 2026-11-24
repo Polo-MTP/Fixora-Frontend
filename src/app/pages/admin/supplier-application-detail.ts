@@ -13,6 +13,9 @@ import {
     type SupplierApplicationState,
 } from '../../admin/supplier-applications-api';
 
+type ComparisonField = 'name' | 'address' | 'age' | 'legibility';
+type ComparisonResult = 'positive' | 'negative';
+
 @Component({
     imports: [AdminShell, CurrencyPipe, DatePipe, RouterLink, TitleCasePipe],
     templateUrl: './supplier-application-detail.html',
@@ -40,6 +43,63 @@ export class SupplierApplicationDetailPage implements OnInit {
     readonly actionMessage = signal('');
     readonly providerComment = signal('');
     readonly documentComment = signal('');
+
+    readonly comparisonFields: ReadonlyArray<{
+        key: ComparisonField;
+        label: string;
+        positive: string;
+        negative: string;
+    }> = [
+        { key: 'name', label: 'Nombre', positive: 'Coincide', negative: 'No coincide' },
+        { key: 'address', label: 'Dirección', positive: 'Coincide', negative: 'No coincide' },
+        { key: 'age', label: 'Antigüedad', positive: 'Vigente', negative: 'Fuera de vigencia' },
+        { key: 'legibility', label: 'Legibilidad', positive: 'Bien', negative: 'Ilegible' },
+    ];
+
+    readonly comparisonResults = signal<Partial<Record<ComparisonField, ComparisonResult>>>({});
+
+    setComparisonResult(field: ComparisonField, value: string): void {
+        this.comparisonResults.update((current) => {
+            const next = { ...current };
+
+            if (value === 'positive' || value === 'negative') {
+                next[field] = value;
+            } else {
+                delete next[field];
+            }
+
+            return next;
+        });
+    }
+
+    comparisonValue(item: SupplierApplicationDetail, field: ComparisonField): string {
+        switch (field) {
+            case 'name':
+                return item.manager_name || 'Nombre no registrado';
+
+            case 'address': {
+                const addresses = item.branches.map(({ address }) =>
+                    [
+                        [address.street, address.num_ext].filter(Boolean).join(' '),
+                        address.colony,
+                        address.municipality,
+                        address.state,
+                        address.postal_code,
+                    ].filter(Boolean).join(', '),
+                );
+
+                return addresses.filter(Boolean).join(' · ') || 'Dirección no registrada';
+            }
+
+            case 'age': {
+                const dueDate = this.selectedDocument()?.due_date;
+                return dueDate ? `Vencimiento registrado: ${dueDate}` : 'Por comprobar en el archivo';
+            }
+
+            case 'legibility':
+                return 'Por comprobar en la vista previa';
+        }
+    }
 
     private applicationId = '';
 
@@ -78,6 +138,10 @@ export class SupplierApplicationDetailPage implements OnInit {
     }
 
     selectDocument(document: ApplicationDocument | null): void {
+        if (this.selectedDocument()?.id !== document?.id) {
+            this.comparisonResults.set({});
+        }
+
         this.selectedDocument.set(document);
         this.previewUrl.set('');
         this.previewError.set('');

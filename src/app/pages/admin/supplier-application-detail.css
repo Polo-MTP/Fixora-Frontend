@@ -52,7 +52,7 @@
 }
 
 h1 {
-    margin: 0 0 0.2rem;
+    margin: 0;
     font-size: 1.1rem;
 }
 
@@ -454,3 +454,113 @@ dd {
         flex: 1 1 100%;
     }
 }
+
+
+.heading-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.heading-title h1 {
+    margin: 0;
+    font-weight: 750;
+}
+
+.comparison-card h2,
+.provider-note label {
+    font-weight: 700;
+}
+
+.comparison-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.65rem;
+    padding-block: 0.65rem;
+    border-top: 1px solid #edf1f5;
+}
+
+.comparison-row__text {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.comparison-row__text span {
+    color: #66758a;
+    font-size: 0.75rem;
+}
+
+.comparison-row__text strong {
+    font-size: 0.825rem;
+    line-height: 1.35;
+}
+
+.comparison-select {
+    max-width: 100%;
+    padding: 0.25rem 0.45rem;
+    border: 0;
+    border-radius: 999px;
+    background: #f1f4f8;
+    color: #43556d;
+    font-size: 0.7rem;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.comparison-select--positive {
+    background: #e9faf1;
+    color: #087653;
+}
+
+.comparison-select--negative {
+    background: #fff0f0;
+    color: #aa2525;
+}
+
+.document-comment {
+    padding-top: 0.65rem;
+    border-top: 1px solid #edf1f5;
+    font-size: 0.8rem;
+}
+
+.document-comment textarea {
+    width: 100%;
+    margin-top: 0.5rem;
+    resize: vertical;
+}
+
+.application-data {
+    margin-top: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.application-data > summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.application-data > summary:focus-visible {
+    outline: 2px solid #1d3b60;
+    outline-offset: 4px;
+}
+
+.application-data > section {
+    margin-top: 1rem;
+}
+
+.application-data > section h2 {
+    margin-bottom: 0.5rem;
+}
+
+.application-data > article {
+    margin-top: 1rem;
+}
+
+.application-data > article h2 {
+    margin-bottom: 0.5rem;
+}
+
