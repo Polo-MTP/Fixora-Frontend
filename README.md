@@ -226,3 +226,31 @@ la separación de comentarios y las reglas de resolución. Para comprobar el
 flujo con la API local, abre una solicitud con archivos guardados, verifica
 que se puedan previsualizar y comprueba cómo cambian las acciones después de
 aprobar los documentos.
+
+## Avisos de solicitudes nuevas (FRONTENDAN-14)
+
+En `/administrador`, la campana abre el panel **Avisos de proveedores**. El
+indicador muestra cuántos avisos de solicitudes nuevas siguen sin leer. La lista
+muestra hasta los 20 más recientes, incluidos los ya leídos.
+
+El contador se actualiza cada 30 segundos mientras el dashboard está abierto.
+La lista se actualiza al abrir el panel y mientras permanece abierto. El botón
+**Actualizar** vuelve a consultar ambos. Al seleccionar un aviso sin leer,
+el sistema lo marca como leído y abre el desglose de la solicitud.
+
+### Integración con API-25
+
+- `GET /api/me/notifications` consulta los avisos de la cuenta autenticada.
+  Angular filtra por `nueva_solicitud_proveedor` y recorre las páginas de avisos
+  sin leer para calcular el contador.
+- `POST /api/me/notifications/:id/read` marca el aviso seleccionado como leído.
+- El `entity_id` del aviso identifica el expediente que se abre en
+  `/administrador/verificaciones/:id`.
+
+Los avisos de reportes se incorporan con la bandeja de soporte en Sprint 6.
+
+### Verificación
+
+```powershell
+pnpm.cmd test --watch=false
+```

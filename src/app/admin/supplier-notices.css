@@ -1,0 +1,133 @@
+:host {
+  display: inline-block;
+}
+
+.notices {
+  position: relative;
+}
+
+.bell {
+  position: relative;
+  display: grid;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border: 1px solid #e8edf3;
+  border-radius: 0.65rem;
+  background: #fff;
+  color: #172a43;
+  cursor: pointer;
+}
+
+.badge {
+  position: absolute;
+  inset-block-start: -0.35rem;
+  inset-inline-end: -0.4rem;
+  min-width: 1.2rem;
+  padding: 0.12rem 0.28rem;
+  border-radius: 999px;
+  background: #be431e;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.panel {
+  position: absolute;
+  z-index: 5;
+  inset-block-start: calc(100% + 0.55rem);
+  inset-inline-end: 0;
+  width: min(22rem, calc(100vw - 2rem));
+  overflow: hidden;
+  border: 1px solid #dce5ee;
+  border-radius: 0.8rem;
+  background: #fff;
+  color: #172a43;
+  box-shadow: 0 0.75rem 2rem rgb(23 42 67 / 15%);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e8edf3;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.refresh {
+  color: #29496c;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.feedback {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  font-size: 0.85rem;
+}
+
+.feedback[role='alert'] {
+  background: #fff2ef;
+  color: #8c2f21;
+}
+
+.notice-list {
+  max-height: min(24rem, 55vh);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.notice {
+  display: grid;
+  width: 100%;
+  gap: 0.35rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #e8edf3;
+  background: #fff;
+  color: inherit;
+  font-size: 0.85rem;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.notice--unread {
+  background: #fff5ef;
+}
+
+.notice:hover:not(:disabled) {
+  background: #f3f6fa;
+}
+
+.notice:disabled {
+  cursor: default;
+}
+
+.notice-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+.unread-label,
+.notice time {
+  color: #54667c;
+  font-size: 0.72rem;
+}
+
+button:focus-visible {
+  outline: 2px solid #1d3b60;
+  outline-offset: -2px;
+}
+
