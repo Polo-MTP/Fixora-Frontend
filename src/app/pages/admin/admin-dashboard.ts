@@ -2,9 +2,10 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AdminShell } from '../../admin/admin-shell';
+import { SupplierNotices } from '../../admin/supplier-notices';
 
 @Component({
-    imports: [AdminShell, RouterLink],
+    imports: [AdminShell, RouterLink, SupplierNotices],
     template: `
     <app-admin-shell>
       <section class="dashboard">
@@ -16,7 +17,7 @@ import { AdminShell } from '../../admin/admin-shell';
           </div>
           <div class="heading-actions">
             <span class="search-display">⌕　Buscar proveedor, cliente o folio</span>
-            <button class="bell" type="button" aria-label="Notificaciones">♧</button>
+            <app-supplier-notices />
           </div>
         </header>
 

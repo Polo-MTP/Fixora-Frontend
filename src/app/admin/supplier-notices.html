@@ -1,0 +1,56 @@
+<div class="notices" (keydown.escape)="close(bell)">
+  <button #bell type="button" class="bell" [attr.aria-label]="bellLabel()" [attr.aria-expanded]="open()"
+    aria-controls="supplier-notices-panel" (click)="toggle()">
+    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M10 21h4" />
+    </svg>
+
+    @if (!countError() && unread() > 0) {
+    <span class="badge" aria-hidden="true">{{ unread() > 99 ? '99+' : unread() }}</span>
+    }
+  </button>
+
+  <section id="supplier-notices-panel" class="panel" aria-labelledby="supplier-notices-title" [hidden]="!open()">
+    <header class="panel-header">
+      <h2 id="supplier-notices-title">Avisos de proveedores</h2>
+      <button type="button" class="refresh" [disabled]="loading()" (click)="refresh()">
+        Actualizar
+      </button>
+    </header>
+
+    @if (listError()) {
+    <p class="feedback" role="alert">{{ listError() }}</p>
+    }
+    @if (actionError()) {
+    <p class="feedback" role="alert">{{ actionError() }}</p>
+    }
+
+    @if (loading() && notices().length === 0) {
+    <p class="feedback" role="status">Cargando avisos…</p>
+    } @else if (!listError() && notices().length === 0) {
+    <p class="feedback">Todavía no hay avisos de solicitudes nuevas.</p>
+    }
+
+    <ul class="notice-list">
+      @for (notice of notices(); track notice.id) {
+      <li>
+        <button type="button" class="notice" [class.notice--unread]="!notice.read_at"
+          [disabled]="!applicationId(notice) || openingId() !== null" (click)="openNotice(notice)">
+          <span class="notice-title">
+            {{ notice.title }}
+            @if (!notice.read_at) {
+            <span class="unread-label">Sin leer</span>
+            }
+          </span>
+          <span>{{ notice.message }}</span>
+          <time [attr.datetime]="notice.created_at">
+            {{ notice.created_at | date: 'short' }}
+          </time>
+        </button>
+      </li>
+      }
+    </ul>
+  </section>
+</div>

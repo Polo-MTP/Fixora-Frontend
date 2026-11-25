@@ -535,6 +535,7 @@
               <label>
                 <input
                   type="checkbox"
+                  [id]="'owner-manager-' + i"
                   [name]="'owner-manager-' + i"
                   [(ngModel)]="staff.managerIsOwner"
                   [disabled]="!ownerManagerSupported"

@@ -279,13 +279,16 @@ describe('ProviderRegistration', () => {
 
   it('mantiene deshabilitada la autoasignación del proveedor como gerente', async () => {
     component.currentStep = 5;
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const checkbox = fixture.nativeElement.querySelector(
-      'input[name="owner-manager-0"]',
-    ) as HTMLInputElement | null;
+    const view = fixture.nativeElement as HTMLElement;
+    expect(view.querySelector('h2')?.textContent).toContain('Empleados por local');
 
+    const checkbox = view.querySelector<HTMLInputElement>('#owner-manager-0');
+
+    expect(checkbox).not.toBeNull();
     expect(checkbox?.disabled).toBe(true);
   });
 });
